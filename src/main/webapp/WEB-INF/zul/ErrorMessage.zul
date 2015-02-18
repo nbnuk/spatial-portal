@@ -6,13 +6,12 @@ is a window and block the processing thread until the
 user clicks ok - not acceptable in production
  -->
 <zk>
-<window title="Message" border="normal" mode="overlapped" 
+<window border="normal" mode="overlapped"
 	position="center,center" use="au.org.emii.portal.composer.ErrorMessageComposer"
 	apply="au.org.emii.portal.composer.ErrorMessageComposer"
 	closable="true" width="600px"
-	style="overflow:visible;background-color:white;padding:3px;"
-
-	>
+	style="overflow:visible;background-color:white;">
+	<caption label="Warning message" sclass="caption" />
 	<label pre="true" id="message" multiline="true" sclass="wordwrap" />
 	<separator height="20px" />
 	<div class="btn-group">

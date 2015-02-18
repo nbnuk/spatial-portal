@@ -251,7 +251,7 @@ public class DistributionsController extends UtilityComposer {
                                 lc = new Listcell();
                                 if (cells[i] != null && cells[i].length() > 0) {
                                     A a = new A("more...");
-                                    a.setHref(CommonData.getBieServer() + "/species/" + cells[i]);
+                                    a.setHref(CommonData.getBieWebServer() + "/species/" + cells[i]);
                                     a.setTarget(StringConstants.BLANK);
                                     a.setParent(lc);
                                 }

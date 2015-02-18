@@ -402,7 +402,8 @@
         <label id="layers_url" visible="false" />
         <label id="biocache_service_url" visible="false" />
         <label id="biocache_webapp_url" visible="false" />
-        <label id="bie_url" visible="false" />
+        <label id="bie_service_url" visible="false" />
+        <label id="bie_webapp_url" visible="false" />
         <label id="webportal_url" visible="false" />
         <label id="help_url" visible="false" />
         <label id="cas_login_url" visible="false" />
@@ -415,7 +416,8 @@ geoserver_url.setValue(mapPortalPage.getSettingsSupplementary().getProperty("geo
 layers_url.setValue(mapPortalPage.getSettingsSupplementary().getProperty("layers_url"));
 biocache_service_url.setValue(mapPortalPage.getSettingsSupplementary().getProperty("biocache_service_url"));
 biocache_webapp_url.setValue(mapPortalPage.getSettingsSupplementary().getProperty("biocache_webapp_url"));
-bie_url.setValue(mapPortalPage.getSettingsSupplementary().getProperty("bie_url"));
+bie_service_url.setValue(mapPortalPage.getSettingsSupplementary().getProperty("bie_service_url"));
+bie_webapp_url.setValue(mapPortalPage.getSettingsSupplementary().getProperty("bie_webapp_url"));
 webportal_url.setValue(mapPortalPage.getSettingsSupplementary().getProperty("webportal_url"));
 help_url.setValue(mapPortalPage.getSettingsSupplementary().getProperty("help_url"));
 cas_login_url.setValue(mapPortalPage.getSettingsSupplementary().getProperty("casServerLoginUrl"));

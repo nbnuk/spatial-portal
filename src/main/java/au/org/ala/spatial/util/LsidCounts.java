@@ -31,7 +31,7 @@ public class LsidCounts {
         String url = null;
         try {
             url = CommonData.getBiocacheServer()
-                    + "/webportal/legend?cm=lft&q="
+                    + "/mapping/legend?cm=lft&q="
                     + URLEncoder.encode("geospatial_kosher:*", StringConstants.UTF_8)
                     + CommonData.getBiocacheQc();
             LOGGER.debug(url);

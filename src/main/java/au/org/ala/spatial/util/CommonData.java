@@ -42,7 +42,8 @@ public final class CommonData {
     private static final String GEOSERVER_URL = "geoserver_url";
     private static final String LAYERS_URL = "layers_url";
     private static final String WEBPORTAL_URL = "webportal_url";
-    private static final String BIE_URL = "bie_url";
+    private static final String BIE_SERVICE_URL = "bie_service_url";
+    private static final String BIE_WEBAPP_URL = "bie_webapp_url";
     private static final String BIOCACHE_SERVICE_URL = "biocache_service_url";
     private static final String BIOCACHE_WEBAPP_URL = "biocache_webapp_url";
     private static final String SPECIES_LIST_URL = "species_list_url";
@@ -54,6 +55,7 @@ public final class CommonData {
     private static final String MAX_AREA_FOR_ENDEMIC = "max_area_endemic";
     private static final String EXTRA_DOWNLOAD_FIELDS = "occurrence_extra_download";
     private static final String DISPLAY_POINTS_OF_INTEREST = "display_points_of_interest";
+    private static final String AUTOCOMPLETE_COUNTS_ENABLED = "auto_complete_counts_enabled";
     private static final String CUSTOM_FACETS = "custom_facets";
     private static final String AREA_REPORT_FACETS = "area_report_facets";
     //NC 20131017 - the default facets supplied by the biocache WS that are ignored.
@@ -70,6 +72,7 @@ public final class CommonData {
     private static String layersServer;
     private static String webportalServer;
     private static String bieServer;
+    private static String bieWebServer;
     private static String biocacheServer;
     private static String biocacheWebServer;
     //(4) species with distribution layres
@@ -85,6 +88,7 @@ public final class CommonData {
     private static int maxEndemicArea;
     private static String extraDownloadFields = "coordinateUncertaintyInMeters";
     private static boolean displayPointsOfInterest;
+    private static boolean autoCompleteCountsEnabled;
     private static String[] areaReportFacets;
     private static String i18nURL;
     private static List<String> i18nIgnoredPrefixes;
@@ -145,7 +149,8 @@ public final class CommonData {
         geoServer = settings.getProperty(GEOSERVER_URL);
         layersServer = settings.getProperty(LAYERS_URL);
         webportalServer = settings.getProperty(WEBPORTAL_URL);
-        bieServer = settings.getProperty(BIE_URL);
+        bieServer = settings.getProperty(BIE_SERVICE_URL, "http://bie.ala.org.au/ws");
+        bieWebServer = settings.getProperty(BIE_WEBAPP_URL, "http://bie.ala.org.au");
         biocacheServer = settings.getProperty(BIOCACHE_SERVICE_URL);
         biocacheWebServer = settings.getProperty(BIOCACHE_WEBAPP_URL);
         speciesListServer = settings.getProperty(SPECIES_LIST_URL);
@@ -168,6 +173,7 @@ public final class CommonData {
         }
 
         displayPointsOfInterest = settings.containsKey(DISPLAY_POINTS_OF_INTEREST) && Boolean.parseBoolean(settings.getProperty(DISPLAY_POINTS_OF_INTEREST));
+        autoCompleteCountsEnabled = settings.containsKey(AUTOCOMPLETE_COUNTS_ENABLED) && Boolean.parseBoolean(settings.getProperty(AUTOCOMPLETE_COUNTS_ENABLED));
 
         i18nURL = settings.getProperty(I18N_URL);
         String tmp = settings.getProperty(I18N_IGNORE_THESE_PREFIXES);
@@ -1030,12 +1036,20 @@ public final class CommonData {
         return displayPointsOfInterest;
     }
 
+    public static boolean getAutoCompleteCountsEnabled() {
+        return autoCompleteCountsEnabled;
+    }
+
     public static List<LayerSelection> getAnalysisLayerSets() {
         return analysisLayerSets;
     }
 
     public static String getBieServer() {
         return bieServer;
+    }
+
+    public static String getBieWebServer() {
+        return bieWebServer;
     }
 
     public static LsidCounts getLsidCounts() {

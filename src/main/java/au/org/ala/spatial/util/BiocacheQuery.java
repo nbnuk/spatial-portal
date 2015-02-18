@@ -250,7 +250,7 @@ public class BiocacheQuery implements Query, Serializable {
 
     public static String getScientificNameRank(String lsid) {
 
-        String snUrl = CommonData.getBieServer() + BIE_SPECIES + lsid + ".json";
+        String snUrl = CommonData.getBieServer() + BIE_SPECIES + lsid;
         LOGGER.debug(snUrl);
 
         try {
@@ -287,7 +287,7 @@ public class BiocacheQuery implements Query, Serializable {
      * @return
      */
     public static String getGuid(String name) {
-        String url = CommonData.getBieServer() + "/ws/guid/" + name.replaceAll(" ", "%20");
+        String url = CommonData.getBieServer() + "/guid/" + name.replaceAll(" ", "%20");
         try {
             HttpClient client = new HttpClient();
             GetMethod get = new GetMethod(url);
@@ -324,7 +324,7 @@ public class BiocacheQuery implements Query, Serializable {
         String[] classificationList = {StringConstants.KINGDOM, StringConstants.PHYLUM, StringConstants.CLASS, StringConstants.ORDER, StringConstants.FAMILY, StringConstants.GENUS, StringConstants.SPECIES, StringConstants.SUB_SPECIES, StringConstants.SCIENTIFIC_NAME};
         Map<String, String> classification = new LinkedHashMap<String, String>();
 
-        String snUrl = CommonData.getBieServer() + BIE_SPECIES + lsid + ".json";
+        String snUrl = CommonData.getBieServer() + BIE_SPECIES + lsid;
         LOGGER.debug(snUrl);
 
         try {
@@ -1488,11 +1488,11 @@ public class BiocacheQuery implements Query, Serializable {
                         first = false;
                     }
 
-                    html.append("<a href='").append(CommonData.getBieServer()).append(BIE_SPECIES).append(o.getValue()).append("' target='_blank'>").append(o.getKey()).append("</a> ");
+                    html.append("<a href='").append(CommonData.getBieWebServer()).append(BIE_SPECIES).append(o.getValue()).append("' target='_blank'>").append(o.getKey()).append("</a> ");
                 }
 
                 html.append("<br />");
-                html.append("More information for <a href='").append(CommonData.getBieServer()).append(BIE_SPECIES).append(s).append("' target='_blank'>").append(getScientificNameRank(s).split(",")[0]).append("</a>");
+                html.append("More information for <a href='").append(CommonData.getBieWebServer()).append(BIE_SPECIES).append(s).append("' target='_blank'>").append(getScientificNameRank(s).split(",")[0]).append("</a>");
                 html.append("<br />");
                 html.append("<br />");
             }
@@ -1534,7 +1534,7 @@ public class BiocacheQuery implements Query, Serializable {
         String[] classificationList = {StringConstants.KINGDOM, StringConstants.PHYLUM, StringConstants.CLASS, StringConstants.ORDER, StringConstants.FAMILY, StringConstants.GENUS, StringConstants.SPECIES, StringConstants.SUB_SPECIES};
         Map<String, String> classification = new LinkedHashMap<String, String>();
 
-        String snUrl = CommonData.getBieServer() + BIE_SPECIES + lsid + ".json";
+        String snUrl = CommonData.getBieServer() + BIE_SPECIES + lsid;
         LOGGER.debug(snUrl);
 
         try {

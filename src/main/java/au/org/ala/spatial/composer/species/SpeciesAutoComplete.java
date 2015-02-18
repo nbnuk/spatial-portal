@@ -108,7 +108,6 @@ public class SpeciesAutoComplete extends Combobox {
                 if (biocacheQuery != null) {
                     sb.append(biocacheQuery.getAutoComplete("raw_taxon_name", val, 50));
                 } else {
-                    //sb.append(autoService(val));
                     sb.append(searchService(val));
                 }
                 if (!biocacheOnly) {
@@ -140,11 +139,12 @@ public class SpeciesAutoComplete extends Combobox {
                         }
 
                         String desc;
-                        if (spVal.length >= 4) {
+                        if (spVal.length >= 4 && CommonData.getAutoCompleteCountsEnabled()) {
                             desc = spVal[2] + " - " + spVal[3];
                         } else {
                             desc = spVal[2];
                         }
+
                         String[] wmsDistributions = CommonData.getSpeciesDistributionWMS(spVal[1]);
                         if (wmsDistributions.length > 0) {
                             if (wmsDistributions.length == 1) {
@@ -162,13 +162,10 @@ public class SpeciesAutoComplete extends Combobox {
                             }
                         }
                         myci.setDescription(desc);
-
-
                         myci.setDisabled(false);
-
                         myci.setValue(taxon);
-
                         myci.setDisabled(false);
+
                         if (myci.getAnnotations() != null) {
                             myci.getAnnotations().clear();
                         }
@@ -248,8 +245,8 @@ public class SpeciesAutoComplete extends Combobox {
 
             //count for guid
             try {
-                if (o.containsKey("left") && o.containsKey("right")) {
-                    long count = CommonData.getLsidCounts().getCount(o.getLong("left"), o.getLong("right"));
+//                    long count = CommonData.getLsidCounts().getCount(o.getString("guid"));
+                    long count = 1;
 
                     if (o.containsKey(StringConstants.NAME) && o.containsKey("guid") && o.containsKey(StringConstants.RANK)) {
                         if (slist.length() > 0) {
@@ -295,7 +292,6 @@ public class SpeciesAutoComplete extends Combobox {
                             slist.append(count);
                         }
                     }
-                }
             } catch (Exception e) {
                 LOGGER.error("failed to add species autocomplete item: " + o, e);
             }

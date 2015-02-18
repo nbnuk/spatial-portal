@@ -831,7 +831,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
      * @param pid
      */
     public MapLayer addObjectByPid(String pid, String displayName) {
-
+        LOGGER.debug("Loading object with: " + CommonData.getLayersServer() + "/object/" + pid);
         JSONObject obj = JSONObject.fromObject(Util.readUrl(CommonData.getLayersServer() + "/object/" + pid));
         //add feature to the map as a new layer
         String areaName = obj.getString(StringConstants.NAME);

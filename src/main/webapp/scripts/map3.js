@@ -908,7 +908,7 @@ function relocatePopup(lon, lat) {
 
 function displaySpeciesInfo(pos, data, prevBtn, nextBtn, curr, total) {
     var occinfo = data;
-    var bie = parent.jq('$bie_url')[0].innerHTML;
+    var bie = parent.jq('$bie_webapp_url')[0].innerHTML;
     var biocache = query_layer[pos].ws;
     var rank = occinfo.taxonRank;
     var speciesname = occinfo.scientificName;
