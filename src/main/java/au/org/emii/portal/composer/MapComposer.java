@@ -44,6 +44,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.zkoss.xel.VariableResolver;
+import org.zkoss.xel.XelException;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.*;
 import org.zkoss.zk.ui.event.Event;
@@ -73,13 +75,14 @@ import java.util.regex.Pattern;
  *
  * @author geoff
  */
-public class MapComposer extends GenericAutowireAutoforwardComposer {
+public class MapComposer extends GenericAutowireAutoforwardComposer implements VariableResolver {
 
     public static final int DEFAULT_POINT_SIZE = 3;
     public static final float DEFAULT_POINT_OPACITY = 0.6f;
     private static final Logger LOGGER = Logger.getLogger(MapComposer.class);
     private static final long serialVersionUID = 1L;
 
+    private String applicationTitle = "Test";
     private String featuresCSV;
     private MapLayer llc2MapLayer;
     private Query downloadSecondQuery = null;
@@ -125,6 +128,8 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
     private PortalSessionUtilities portalSessionUtilities = null;
     private Settings settings = null;
     private Pattern layerNameParamPattern = Pattern.compile("ly\\.[0-9]{1,}");
+
+    public String getApplicationTitle(){ return applicationTitle; }
 
     public void onClick$removeAllLayers() {
         if (safeToPerformMapAction()) {
@@ -3220,5 +3225,10 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
 
     public void setDownloadSecondLayers(String[] downloadSecondLayers) {
         this.downloadSecondLayers = downloadSecondLayers == null ? null : downloadSecondLayers.clone();
+    }
+
+    @Override
+    public Object resolveVariable(String s) throws XelException {
+        return "My Application Title";
     }
 }

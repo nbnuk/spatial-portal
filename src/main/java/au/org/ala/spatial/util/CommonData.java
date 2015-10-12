@@ -220,8 +220,8 @@ public final class CommonData {
         //need this data if using SP's endemic method
         if (CommonData.getSettings().containsKey("endemic.sp.method")
                 && CommonData.getSettings().getProperty("endemic.sp.method").equals("true")) {
-            getSpeciesListCountsKosher(true);
-            getSpeciesListCounts(true);
+//            getSpeciesListCountsKosher(true);
+//            getSpeciesListCounts(true);
         }
 
         //(2) for EnvironmentalList

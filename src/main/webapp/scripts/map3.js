@@ -380,7 +380,7 @@ function iterateSpeciesInfoQuery(curr) {
 
             var heading = "<h2 class='z-label'>Occurrence information (" + (curr + 1) + " of " + query_count_total + ")</h2>";
             if (query_count_total == 1) {
-                heading = "<h2>Occurrence information (1 occurrence)</h2>";
+                heading = "<h2>Occurrence information </h2><h4>(1 occurrence)</h4>";
             }
             var infohtml = "<div id='sppopup2'> " +
                 heading + "Record id: " + ulyr_occ_id + "<br /> " + data + " <br /> <br />" +
