@@ -207,7 +207,7 @@ public class AreaMapPolygon extends AreaToolComposer {
 
                         Facet facet = null;
                         //only get field data if it is an intersected layer (to exclude layers containing points)
-                        if (CommonData.getLayer((String) objJson.get(StringConstants.FID)) != null) {
+                        if (CommonData.getLayerByShortName((String) objJson.get(StringConstants.FID)) != null) {
                             facet = Util.getFacetForObject(feature.get(StringConstants.VALUE), (String) objJson.get(StringConstants.FID));
                         }
 

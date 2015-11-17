@@ -106,7 +106,7 @@ public class ScatterplotComposer extends ToolComposer {
             //add data parameters
             String layerunits = "";
             try {
-                layerunits = String.valueOf(CommonData.getLayer(lyr1value).get("environmentalvalueunits")) + "," + String.valueOf(CommonData.getLayer(lyr2value).get("environmentalvalueunits"));
+                layerunits = String.valueOf(CommonData.getLayerByShortName(lyr1value).get("environmentalvalueunits")) + "," + String.valueOf(CommonData.getLayerByShortName(lyr2value).get("environmentalvalueunits"));
             } catch (Exception e) {
             }
 

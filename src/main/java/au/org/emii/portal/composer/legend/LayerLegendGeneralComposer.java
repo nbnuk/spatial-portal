@@ -785,7 +785,7 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
             } else {
                 activeLayerName = mapLayer.getUri().replaceAll("^.*ALA:", "").replaceAll("&.*", "");
             }
-            layer = CommonData.getLayer(activeLayerName);
+            layer = CommonData.getLayerByShortName(activeLayerName);
         }
         LOGGER.debug("ACTIVE LAYER: " + activeLayerName);
 
@@ -1088,7 +1088,7 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
 
         Facet facet = null;
         //only get field data if it is an intersected layer (to exclude layers containing points)
-        JSONObject layerObj = CommonData.getLayer((String) obj.get(StringConstants.FID));
+        JSONObject layerObj = CommonData.getLayerByShortName((String) obj.get(StringConstants.FID));
         if (layerObj != null) {
             facet = Util.getFacetForObject(obj.get(StringConstants.NAME).toString(), (String) obj.get(StringConstants.FID));
         }

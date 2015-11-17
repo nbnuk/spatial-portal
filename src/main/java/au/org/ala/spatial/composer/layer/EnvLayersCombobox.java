@@ -98,7 +98,7 @@ public class EnvLayersCombobox extends Combobox {
                     String type = jo.get(StringConstants.TYPE).toString();
                     String name = jo.get(StringConstants.NAME).toString();
 
-                    JSONObject layer = CommonData.getLayer(name);
+                    JSONObject layer = CommonData.getLayerByShortName(name);
                     boolean skip = false;
                     if (layer != null && layer.containsKey(StringConstants.FIELDS)) {
                         JSONArray ja = (JSONArray) layer.get(StringConstants.FIELDS);

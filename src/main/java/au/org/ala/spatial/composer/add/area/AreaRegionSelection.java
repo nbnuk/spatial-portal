@@ -103,7 +103,7 @@ public class AreaRegionSelection extends AreaToolComposer {
         Facet facet = null;
         if (!point && mapLayer.getFacets() == null) {
             //only get field data if it is an intersected layer (to exclude layers containing points)
-            if (CommonData.getLayer(fid) != null) {
+            if (CommonData.getLayerByFID(fid) != null) {
                 JSONObject fieldJson = null;
                 try {
                     fieldJson = (JSONObject) jp.parse(Util.readUrl(CommonData.getLayersServer() + "/field/" + fid + "?pageSize=0"));

@@ -973,10 +973,10 @@ public final class CommonData {
         return output;
     }
 
-    /*
+    /**
      * get a layer JSONObject with the short name.
      */
-    public static JSONObject getLayer(String name) {
+    public static JSONObject getLayerByShortName(String name) {
         JSONObject layer = null;
         for (int i = 0; i < layerlistJSON.size(); i++) {
             layer = (JSONObject) layerlistJSON.get(i);
@@ -988,6 +988,26 @@ public final class CommonData {
         }
         return layer;
     }
+
+    /**
+     * get a layer JSONObject with the short name.
+     */
+    public static JSONObject getLayerByFID(String fid) {
+        JSONObject layer = null;
+        if(fid.startsWith("cl") || fid.startsWith("el") ){
+            String id = fid.substring(2);
+            for (int i = 0; i < layerlistJSON.size(); i++) {
+                layer = (JSONObject) layerlistJSON.get(i);
+                if (layer.get(StringConstants.ID).toString().equalsIgnoreCase(id)) {
+                    break;
+                } else {
+                    layer = null;
+                }
+            }
+        }
+        return layer;
+    }
+
 
     static void initBiocacheLayerList() {
         String url = biocacheServer + "/index/fields";

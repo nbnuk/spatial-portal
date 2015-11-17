@@ -865,7 +865,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
         MapLayerMetadata md = mapLayer.getMapLayerMetadata();
 
         Facet facet = null;
-        if (CommonData.getLayer(fid) != null && CommonData.getFacetLayerNameDefault(fid) != null) {
+        if (CommonData.getLayerByShortName(fid) != null && CommonData.getFacetLayerNameDefault(fid) != null) {
             JSONObject field = null;
             try {
                 field = (JSONObject) jp.parse(Util.readUrl(CommonData.getLayersServer() + "/field/" + fid + "?pageSize=0"));
@@ -2060,7 +2060,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
                         + jo.containsKey(StringConstants.PID)));
 
                 //only get field data if it is an intersected layer (to exclude layers containing points)
-                if (CommonData.getLayer((String) object.get(StringConstants.FID)) != null) {
+                if (CommonData.getLayerByShortName((String) object.get(StringConstants.FID)) != null) {
                     facet = Util.getFacetForObject(jo.get(StringConstants.AREA_NAME).toString()
                             , (String) object.get(StringConstants.FID));
                 }

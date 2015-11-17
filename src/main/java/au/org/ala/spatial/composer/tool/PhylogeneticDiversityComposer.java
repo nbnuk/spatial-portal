@@ -219,7 +219,7 @@ public class PhylogeneticDiversityComposer extends ToolComposer {
         if (autoCompleteLayerSelection != null && cAreasFromLayer.isChecked()) {
             String fieldId = CommonData.getLayerFacetNameDefault(autoCompleteLayerSelection);
             String layer = CommonData.getFacetLayerName(fieldId);
-            JSONObject jo = CommonData.getLayer(layer);
+            JSONObject jo = CommonData.getLayerByShortName(layer);
 
             String name = jo.get(StringConstants.NAME).toString();
 
