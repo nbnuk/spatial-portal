@@ -13,13 +13,13 @@
         <n:div class="fancybox-bg" id="fancybox-bg-s" />
         <n:div class="fancybox-bg" id="fancybox-bg-w" />
         <a sclass="fancybox-close" onClick="addspeciesinareawindow.onClick$btnCancel(null)" style="display: inline" />
-        <n:a class="fancybox-help" n:onClick="loadHelp('species-add-to-map')" style="display: inline" />
+        <n:a class="fancybox-help" n:href="${addspeciesinareawindow.getMapComposer().getSettingsSupplementary().getProperty('help_url')}/spatial-portal-help/species-add-to-map" n:target="_blank"  style="display: inline" />
 <caption label="Restrict mapped species to an area" />
         <separator />
         <vbox  >
             <radiogroup id="rgArea" orient="vertical" focus="true" onOK="addspeciesinareawindow.onClick$btnOk(null)">
                 <radio id="rAreaCurrent" label="Current extent" value="current" />
-                <radio id="rAreaAustralia" label="Australia" value="australia" />
+                <radio id="rAreaAustralia" label="${addspeciesinareawindow.getMapComposer().getSettingsSupplementary().getProperty('default.name')}" value="australia" />
                 <radio id="rAreaWorld" label="World" value="world" checked="true"/>
             </radiogroup>
         </vbox>

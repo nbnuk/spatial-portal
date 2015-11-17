@@ -113,6 +113,7 @@ function setSelectionGeometry(geometry_orig) {
     var value = geometry.toString();
     zAu.send(new zk.Event(zk.Widget.$(jq('$areapolygonwindow')[0]), 'onSelectionGeom', value));
     zAu.send(new zk.Event(zk.Widget.$(jq('$areapointandradiuswindow')[0]), 'onSelectionGeom', value));
+    zAu.send(new zk.Event(zk.Widget.$(jq('$pointcomparisonswindow')[0]), 'onMapClick', value));
 
 
 }
@@ -206,17 +207,6 @@ function goToUserLocation() {
     }
 }
 
-function displayBioStorCount(comp, val) {
-    console.log("displayBioStorCount");
-    console.log(comp);
-    console.log(val);
-    if (isNaN(val)) {
-        $("#biostorrow").css('display', 'none');
-    } else {
-        $("#biostorrow").css('display', 'block');
-        $("#" + comp).html(val);
-    }
-}
 function displayHTMLInformation(element, info) {
     $('#' + element).html(info);
 }
@@ -283,12 +273,21 @@ function runNearestLocality() {
     mapFrame.toggleActiveNearest();
 }
 
+function runPointComparisons() {
+    zAu.send(new zk.Event(zk.Widget.$(jq('$mapPortalPage')[0]), 'runPointComparisons', null));
+}
+
+
 function runSamplingAction() {
     zAu.send(new zk.Event(zk.Widget.$(jq('$mapPortalPage')[0]), 'onClick$btnAddSampling', null));
 }
 
 function runPrediction() {
     zAu.send(new zk.Event(zk.Widget.$(jq('$mapPortalPage')[0]), 'onClick$btnAddMaxent', null));
+}
+
+function runAooEoo() {
+    zAu.send(new zk.Event(zk.Widget.$(jq('$mapPortalPage')[0]), 'onClick$btnAddAooEoo', null));
 }
 
 function runClassification() {

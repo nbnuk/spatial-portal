@@ -46,11 +46,13 @@ var mapClickControl;
 var polyControl = null;
 var radiusControl = null;  //for deactivate after drawing
 var boxControl = null;	//for deactivate after drawing
+var pointControl = null;	//for deactivate after drawing
 var areaSelectControl = null;
 var filteringPolygon = null;	//temporary for destroy option after display
 var alocPolygon = null;			//temporary for destroy option after display
 var polygonLayer = null;
 var boxLayer = null;
+var pointLayer = null;
 var radiusLayer = null;
 var featureSelectLayer = null;
 var featureSpeciesSelectLayer = null;
@@ -356,7 +358,8 @@ function iterateSpeciesInfoQuery(curr) {
     var nextBtn = " &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ";
     try {
         if (curr + 1 < query_count_total) {
-            nextBtn = "<a style='float: right' href='javascript:iterateSpeciesInfoQuery(" + (curr + 1) + ");'><img src='img/arrow_right.png' /></a>"; // next &rArr;
+            nextBtn = "<a style='float: right' href='javascript:iterateSpeciesInfoQuery(" + (curr + 1) + ");'>" +
+                "<img src='img/arrow_right.png' /></a>"; // next &rArr;
         }
     } catch (err) {
     }
@@ -735,6 +738,32 @@ function addPolygonDrawingTool() {
 //////
 }
 
+function addPointDrawingTool() {
+    removeAreaSelection();
+
+    ////adding polygon control and layer
+    var layer_style = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+    layer_style.fillColor = "red";
+    layer_style.strokeColor = "red";
+
+    pointLayer = new OpenLayers.Layer.Vector("Point Layer", {
+        style: layer_style
+    });
+    pointLayer.setVisibility(true);
+    map.addLayer(pointLayer);
+    if (pointControl != null) {
+        map.removeControl(pointControl);
+        pointControl.destroy();
+        pointControl = null;
+    }
+    pointControl = new OpenLayers.Control.DrawFeature(pointLayer, OpenLayers.Handler.Point, {
+        'featureAdded': pointAdded
+    });
+    map.addControl(pointControl);
+    pointControl.activate();
+//////
+}
+
 function removeAreaSelection() {
     if (polygonLayer != null) {
         polygonLayer.destroy();
@@ -745,6 +774,11 @@ function removeAreaSelection() {
         boxLayer.destroy();
         boxLayer = null;
         boxControl.deactivate();
+    }
+    if (pointLayer != null) {
+        pointLayer.destroy();
+        pointLayer = null;
+        pointControl.deactivate();
     }
     if (radiusLayer != null) {
         radiusLayer.destroy();
@@ -820,6 +854,11 @@ function regionAdded(feature) {
 
 // This function passes the geometry up to javascript in index.zul which can then send it to the server.
 function polygonAdded(feature) {
+    parent.setPolygonGeometry(feature.geometry);
+    removeAreaSelection();
+    setVectorLayersSelectable();
+}
+function pointAdded(feature) {
     parent.setPolygonGeometry(feature.geometry);
     removeAreaSelection();
     setVectorLayersSelectable();
@@ -1883,6 +1922,8 @@ if (window['loadFirebugConsole']) {
 }
 
 function getLayerValue(layer, lat, lon) {
+    while (lon > 180) lon -= 360;
+    while (lon < -180) lon += 360;
     var url = parent.jq('$layers_url')[0].innerHTML + "/intersect/" + layer + "/" + lat + "/" + lon;
     var ret = "";
     $.ajax({

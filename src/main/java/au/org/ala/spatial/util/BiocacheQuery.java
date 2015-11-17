@@ -5,23 +5,22 @@
 package au.org.ala.spatial.util;
 
 import au.com.bytecode.opencsv.CSVReader;
+import au.org.ala.legend.Facet;
+import au.org.ala.legend.Legend;
+import au.org.ala.legend.LegendObject;
+import au.org.ala.legend.QueryField;
 import au.org.ala.spatial.StringConstants;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.io.WKTReader;
 import com.vividsolutions.jts.io.WKTWriter;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import org.ala.layers.intersect.SimpleRegion;
-import org.ala.layers.intersect.SimpleShapeFile;
-import org.ala.layers.legend.Facet;
-import org.ala.layers.legend.Legend;
-import org.ala.layers.legend.LegendObject;
-import org.ala.layers.legend.QueryField;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 import java.io.*;
 import java.net.URLEncoder;
@@ -48,6 +47,7 @@ public class BiocacheQuery implements Query, Serializable {
     static final String BOUNDING_BOX_CSV = "/webportal/bbox?";
     static final String INDEXED_FIELDS_LIST = "/indexed/fields?";
     static final String POST_SERVICE = "/webportal/params?";
+    static final String QID_DETAILS = "/webportal/params/details/";
     static final String ENDEMIC_COUNT_SERVICE = "/explore/counts/endemic?";
     static final String ENDEMIC_SPECIES_SERVICE_CSV = "/explore/endemic/species.csv?";
     static final String DEFAULT_ROWS = "pageSize=1000000";
@@ -110,25 +110,7 @@ public class BiocacheQuery implements Query, Serializable {
     }
 
     public BiocacheQuery(String lsids, String[] rawNames, String wkt, String extraParams, List<Facet> facets, boolean forMapping, boolean[] geospatialKosher) {
-        this.lsids = lsids;
-        this.rawNames = rawNames == null ? null : rawNames.clone();
-        if (facets != null) {
-            this.facets = new ArrayList<Facet>(facets.size());
-            this.facets.addAll(facets);
-        }
-        this.wkt = (wkt != null && wkt.equals(CommonData.WORLD_WKT)) ? null : Util.fixWkt(wkt);
-        this.extraParams = extraParams;
-        this.forMapping = forMapping;
-        this.qc = CommonData.getBiocacheQc();
-
-        this.biocacheWebServer = CommonData.getBiocacheWebServer();
-        this.biocacheServer = CommonData.getBiocacheServer();
-
-        if (geospatialKosher != null) {
-            addGeospatialKosher(geospatialKosher);
-        }
-
-        makeParamId();
+        this(lsids, rawNames, wkt, extraParams, facets, forMapping, geospatialKosher, null, null, false);
     }
 
     public BiocacheQuery(String lsids, String wkt, String extraParams, List<Facet> facets, boolean forMapping, boolean[] geospatialKosher, String biocacheServer, String biocacheWebServer, boolean supportsDynamicFacets) {
@@ -136,6 +118,88 @@ public class BiocacheQuery implements Query, Serializable {
     }
 
     public BiocacheQuery(String lsids, String[] rawNames, String wkt, String extraParams, List<Facet> facets, boolean forMapping, boolean[] geospatialKosher, String biocacheServer, String biocacheWebServer, boolean supportsDynamicFacets) {
+
+        if (biocacheServer != null && biocacheWebServer != null) {
+            this.biocacheWebServer = biocacheWebServer;
+            this.biocacheServer = biocacheServer;
+        } else {
+            this.biocacheWebServer = CommonData.getBiocacheWebServer();
+            this.biocacheServer = CommonData.getBiocacheServer();
+        }
+
+        //identify and extract qids from fqs or single term extraParams
+        //q and fqs get added to extraParams
+        //wkt is unioned
+        if (facets != null || extraParams != null) {
+            String newExtraParams = null;
+            for (int i = facets == null ? -1 : facets.size() - 1; i >= -1; i--) {
+                //check extraParams for a single qid term
+                String term;
+                if (i >= 0) term = facets.get(i).toString();
+                else term = extraParams;
+                if (term != null && term.startsWith("qid:")) {
+                    if (i == -1) extraParams = null;
+
+                    JSONObject jo = getQidDetails(term);
+
+                    try {
+                        StringBuilder sb = new StringBuilder();
+                        if (jo.containsKey("q")) {
+                            if (jo.get("q").toString().length() > 0 && !jo.get("q").toString().equals("*:*")) {
+                                sb.append("&fq=").append(jo.get("q"));
+                            }
+                        }
+                        if (jo.containsKey("fqs")) {
+                            JSONArray ja = (JSONArray) jo.get("fqs");
+                            for (int j = 0; j < ja.size(); j++) {
+                                if (ja.get(j).toString().length() > 0 && !ja.get(j).toString().equals("*:*")) {
+                                    sb.append("&fq=").append(ja.get(j));
+                                }
+                            }
+                        }
+                        if (newExtraParams == null) {
+                            newExtraParams = sb.toString().replace("\\", "");
+                        } else {
+                            newExtraParams += sb.toString().replace("\\", "");
+                        }
+                        if (jo.containsKey("wkt") && jo.get("wkt").toString().length() > 0) {
+                            String qidWkt = jo.get("wkt").toString();
+
+                            if (wkt == null) {
+                                wkt = qidWkt;
+                            } else {
+                                try {
+                                    WKTReader wktReader = new WKTReader();
+                                    Geometry g1 = wktReader.read(wkt);
+                                    Geometry g2 = wktReader.read(qidWkt);
+                                    wkt = g1.union(g2).toText().replace(", ", ",").replace(" (", "(");
+                                } catch (Exception e) {
+                                    LOGGER.error("failed to union wkt: " + wkt + " and " + qidWkt);
+                                }
+                            }
+                        }
+
+                        //set name
+                        if (jo.containsKey("displayString")) {
+                            name = jo.get("displayString").toString();
+                            solrName = jo.get("displayString").toString();
+                        }
+
+                        if (i >= 0) facets.remove(i);
+                    } catch (Exception e) {
+                        LOGGER.error("failed to merge " + facets.get(i).toString(), e);
+                    }
+                }
+            }
+            if (newExtraParams != null) {
+                if (extraParams == null) {
+                    extraParams = newExtraParams;
+                } else {
+                    extraParams += newExtraParams;
+                }
+            }
+        }
+        
         this.lsids = lsids;
         this.rawNames = rawNames == null ? null : rawNames.clone();
         if (facets != null) {
@@ -147,14 +211,6 @@ public class BiocacheQuery implements Query, Serializable {
         this.forMapping = forMapping;
         this.qc = CommonData.getBiocacheQc();
         this.supportsDynamicFacets = supportsDynamicFacets;
-
-        if (biocacheServer != null && biocacheWebServer != null) {
-            this.biocacheWebServer = biocacheWebServer;
-            this.biocacheServer = biocacheServer;
-        } else {
-            this.biocacheWebServer = CommonData.getBiocacheWebServer();
-            this.biocacheServer = CommonData.getBiocacheServer();
-        }
 
         if (geospatialKosher != null) {
             addGeospatialKosher(geospatialKosher);
@@ -261,9 +317,10 @@ public class BiocacheQuery implements Query, Serializable {
             client.executeMethod(get);
             String slist = get.getResponseBodyAsString();
 
-            JSONObject jo = JSONObject.fromObject(slist);
-            String scientficName = jo.getJSONObject("taxonConcept").getString("nameString");
-            String r = jo.getJSONObject("taxonConcept").getString("rankString");
+            JSONParser jp = new JSONParser();
+            JSONObject jo = (JSONObject) jp.parse(slist);
+            String scientficName = ((JSONObject) jo.get("taxonConcept")).get("nameString").toString();
+            String r = ((JSONObject) jo.get("taxonConcept")).get("rankString").toString();
 
             LOGGER.debug("Arrays.binarySearch(COMMON_TAXON_RANKS, rank): " + Arrays.binarySearch(COMMON_TAXON_RANKS, r));
             if (Arrays.binarySearch(COMMON_TAXON_RANKS, r) > -1) {
@@ -296,11 +353,12 @@ public class BiocacheQuery implements Query, Serializable {
             client.executeMethod(get);
             String body = get.getResponseBodyAsString();
 
-            JSONArray ja = JSONArray.fromObject(body);
+            JSONParser jp = new JSONParser();
+            JSONArray ja = (JSONArray) jp.parse(body);
             if (ja != null && !ja.isEmpty()) {
-                JSONObject jo = ja.getJSONObject(0);
-                if (jo != null && jo.has("acceptedIdentifier")) {
-                    return jo.getString("acceptedIdentifier");
+                JSONObject jo = (JSONObject) ja.get(0);
+                if (jo != null && jo.containsKey("acceptedIdentifier")) {
+                    return jo.get("acceptedIdentifier").toString();
                 } else {
                     return null;
                 }
@@ -335,14 +393,18 @@ public class BiocacheQuery implements Query, Serializable {
             client.executeMethod(get);
             String slist = get.getResponseBodyAsString();
 
-            JSONObject jo = JSONObject.fromObject(slist);
+            JSONParser jp = new JSONParser();
+            JSONObject jo = (JSONObject) jp.parse(slist);
 
-            JSONObject joOcc = jo.getJSONObject("classification");
+            JSONObject joOcc = (JSONObject) jo.get("classification");
             for (String c : classificationList) {
                 //NC stop exception where a rank can't be found
-                String value = joOcc.optString(c.replace("ss", "zz"), null);
-                if (value != null) {
-                    classification.put(c.replace("ss", "zz"), value);
+                String s = c.replace("ss", "zz");
+                if (joOcc.containsKey(s)) {
+                    String value = joOcc.get(s).toString();
+                    if (value != null) {
+                        classification.put(s, value);
+                    }
                 }
             }
 
@@ -566,20 +628,22 @@ public class BiocacheQuery implements Query, Serializable {
                     //success
                     String rawJSON = get.getResponseBodyAsString();
                     //parse
-                    JSONObject jo = JSONObject.fromObject(rawJSON);
+                    JSONParser jp = new JSONParser();
+                    JSONObject jo = (JSONObject) jp.parse(rawJSON);
 
-                    JSONArray ja = jo.getJSONArray("facetResults");
+                    JSONArray ja = (JSONArray) jo.get("facetResults");
                     for (int i = 0; i < ja.size(); i++) {
-                        JSONObject o = ja.getJSONObject(i);
-                        if (o.getString("fieldName").equals(facet)) {
+                        JSONObject o = (JSONObject) ja.get(i);
+                        if (o.get("fieldName").equals(facet)) {
                             //process the values in the list
-                            JSONArray values = o.getJSONArray("fieldResult");
+                            JSONArray values = (JSONArray) o.get("fieldResult");
                             for (int j = 0; j < values.size(); j++) {
-                                JSONObject vo = values.getJSONObject(j);
+                                JSONObject vo = (JSONObject) values.get(j);
                                 if (slist.length() > 0) {
                                     slist.append("\n");
                                 }
-                                slist.append(vo.getString("label")).append("//found ").append(Integer.toString(vo.getInt(StringConstants.COUNT)));
+                                slist.append(vo.get("label")).append("//found ")
+                                        .append(vo.get(StringConstants.COUNT).toString());
                             }
                         }
                     }
@@ -617,12 +681,29 @@ public class BiocacheQuery implements Query, Serializable {
             client.executeMethod(get);
             speciesList = get.getResponseBodyAsString();
 
-            //add 'Other' correction
+            //add 'Other' correction and add additional columns
+            List<String> header = CommonData.getSpeciesListAdditionalColumnsHeader();
+            StringBuilder newlist = new StringBuilder();
             int total = getOccurrenceCount();
             CSVReader csv = new CSVReader(new StringReader(speciesList));
             String[] line;
             int count = 0;
+            int lastpos = 0;
             while ((line = csv.readNext()) != null) {
+
+                int nextpos = speciesList.indexOf('\n', lastpos + 1);
+                if (nextpos < 0) nextpos = speciesList.length();
+                newlist.append(speciesList.substring(lastpos, nextpos));
+
+                List<String> list = header;
+                if (lastpos != 0) {
+                    list = CommonData.getSpeciesListAdditionalColumns(header, line[0]);
+                }
+                for (int i = 0; i < list.size(); i++) {
+                    newlist.append(",\"").append(list.get(i).replace("\"", "\"\"").replace("\\", "\\\\")).append("\"");
+                }
+                lastpos = nextpos;
+
                 try {
                     count += Integer.parseInt(line[line.length - 1]);
                 } catch (Exception e) {
@@ -630,8 +711,9 @@ public class BiocacheQuery implements Query, Serializable {
             }
             if (total - count > 0) {
                 String correction = "\n,,,,,,,,,,Other (not species rank)," + (total - count);
-                speciesList += correction;
+                newlist.append(correction);
             }
+            speciesList = newlist.toString();
         } catch (Exception e) {
             LOGGER.error("error getting species list from: " + url);
         }
@@ -773,11 +855,12 @@ public class BiocacheQuery implements Query, Serializable {
             client.executeMethod(get);
             String response = get.getResponseBodyAsString();
 
-            JSONArray ja = JSONArray.fromObject(response);
+            JSONParser jp = new JSONParser();
+            JSONArray ja = (JSONArray) jp.parse(response);
             if (!ja.isEmpty()) {
-                JSONObject jo = ja.getJSONObject(0);
+                JSONObject jo = (JSONObject) ja.get(0);
                 if (jo.containsKey(StringConstants.COUNT)) {
-                    speciesCount = Integer.parseInt(jo.getString(StringConstants.COUNT));
+                    speciesCount = Integer.parseInt(jo.get(StringConstants.COUNT).toString());
                 }
             }
         } catch (Exception e) {
@@ -870,6 +953,28 @@ public class BiocacheQuery implements Query, Serializable {
         }
 
         return getFullQ(true);
+    }
+
+    private JSONObject getQidDetails(String qidTerm) {
+        HttpClient client = new HttpClient();
+        String url = biocacheServer
+                + QID_DETAILS + qidTerm.replace("qid:", "");
+        GetMethod get = new GetMethod(url);
+        try {
+            int result = client.executeMethod(get);
+            String response = get.getResponseBodyAsString();
+
+            if (result == 200) {
+                JSONParser jp = new JSONParser();
+                JSONObject jo = (JSONObject) jp.parse(response);
+                return jo;
+            } else {
+                LOGGER.debug("error with url:" + url + " getting qid details for " + qidTerm + " > response_code:" + result + " response:" + response);
+            }
+        } catch (Exception e) {
+            LOGGER.error("error getting biocache param details from " + url, e);
+        }
+        return null;
     }
 
     @Override
@@ -977,7 +1082,20 @@ public class BiocacheQuery implements Query, Serializable {
 
             if (encode) {
                 try {
-                    sb.append(URLEncoder.encode(extraParams, StringConstants.UTF_8));
+                    //split
+                    String[] split = extraParams.split("&");
+                    for (int i = 0; i < split.length; i++) {
+                        String key = "";
+                        String value = split[i];
+                        if (i > 0) {
+                            int e = split[i].indexOf("=");
+                            if (e > 0) {
+                                key = split[i].substring(0, e);
+                                value = split[i].substring(e + 1);
+                            }
+                        }
+                        sb.append(key).append(URLEncoder.encode(value, StringConstants.UTF_8));
+                    }
                 } catch (Exception e) {
                     LOGGER.error("error encoding: " + extraParams, e);
                 }
@@ -1123,12 +1241,13 @@ public class BiocacheQuery implements Query, Serializable {
             client.executeMethod(get);
             String slist = get.getResponseBodyAsString();
 
-            JSONArray ja = JSONArray.fromObject(slist);
+            JSONParser jp = new JSONParser();
+            JSONArray ja = (JSONArray) jp.parse(slist);
 
             for (Object arrayElement : ja) {
                 JSONObject jsonObject = (JSONObject) arrayElement;
-                String facetName = jsonObject.getString(StringConstants.NAME);
-                String facetDisplayName = jsonObject.getString("displayName");
+                String facetName = jsonObject.get(StringConstants.NAME).toString();
+                String facetDisplayName = jsonObject.get("displayName").toString();
 
                 //TODO: remove this when _RNG fields work in legend &cm= parameter
                 if (!(facetDisplayName.contains("(Range)") && facetName.endsWith("_RNG"))) {
@@ -1153,11 +1272,12 @@ public class BiocacheQuery implements Query, Serializable {
             client.executeMethod(get);
             String slist = get.getResponseBodyAsString();
 
-            JSONArray ja = JSONArray.fromObject(slist);
+            JSONParser jp = new JSONParser();
+            JSONArray ja = (JSONArray) jp.parse(slist);
 
             for (Object arrayElement : ja) {
                 JSONObject jsonObject = (JSONObject) arrayElement;
-                String facetName = jsonObject.getString(StringConstants.NAME);
+                String facetName = jsonObject.get(StringConstants.NAME).toString();
 
                 if (!facetName.endsWith("_RNG")) {
                     customFields.add(facetName);
@@ -1240,7 +1360,7 @@ public class BiocacheQuery implements Query, Serializable {
             LOGGER.debug("lo not empty and lo=" + lo);
             lo = legends.get(lo.getColourMode());
         }
-        if (lo == null) {
+        if (lo == null && getOccurrenceCount() > 0) {
             HttpClient client = new HttpClient();
             String facetToColourBy = StringConstants.OCCURRENCE_YEAR_DECADE.equals(colourmode) ? StringConstants.OCCURRENCE_YEAR : translateFieldForSolr(colourmode);
 
@@ -1414,12 +1534,7 @@ public class BiocacheQuery implements Query, Serializable {
             }
         } catch (Exception e) {
             //default to 'world' bb
-            SimpleRegion sr = SimpleShapeFile.parseWKT(CommonData.WORLD_WKT);
-            bbox.clear();
-            bbox.add(Math.max(-180, sr.getBoundingBox()[0][0]));
-            bbox.add(Math.max(-90, sr.getBoundingBox()[0][1]));
-            bbox.add(Math.min(180, sr.getBoundingBox()[1][0]));
-            bbox.add(Math.min(90, sr.getBoundingBox()[1][1]));
+            bbox = Util.getBoundingBox(CommonData.WORLD_WKT);
 
             LOGGER.error("error getting species layer bounding box from biocache:" + url, e);
         }
@@ -1545,16 +1660,17 @@ public class BiocacheQuery implements Query, Serializable {
             client.executeMethod(get);
             String slist = get.getResponseBodyAsString();
 
-            JSONObject jo = JSONObject.fromObject(slist);
-            String r = jo.getJSONObject("taxonConcept").getString("rankString");
+            JSONParser jp = new JSONParser();
+            JSONObject jo = (JSONObject) jp.parse(slist);
+            String r = ((JSONObject) jo.get("taxonConcept")).get("rankString").toString();
 
-            JSONObject joOcc = jo.getJSONObject("classification");
+            JSONObject joOcc = (JSONObject) jo.get("classification");
             for (String c : classificationList) {
                 if (c.equals(r)) {
                     break;
                 }
                 if (joOcc.containsKey(c.replace("ss", "zz"))) {
-                    classification.put(joOcc.getString(c.replace("ss", "zz")), joOcc.getString(c.replace("ss", "zz") + "Guid"));
+                    classification.put(joOcc.get(c.replace("ss", "zz")).toString(), joOcc.get(c.replace("ss", "zz") + "Guid").toString());
                 }
             }
 
@@ -1623,10 +1739,14 @@ public class BiocacheQuery implements Query, Serializable {
 
                 StringBuilder html = new StringBuilder();
 
-                JSONArray ja = JSONArray.fromObject(response);
+                JSONParser jp = new JSONParser();
+                JSONArray ja = (JSONArray) jp.parse(response);
                 for (int i = 0; i < ja.size(); i++) {
-                    JSONObject jo = ja.getJSONObject(i);
-                    html.append("<a href='http://collections.ala.org.au/public/showDataProvider/").append(jo.getString(StringConstants.ID)).append("' target='_blank'>").append(jo.getString(StringConstants.NAME)).append("</a>: ").append(jo.getString(StringConstants.COUNT)).append(" records <br />");
+                    JSONObject jo = (JSONObject) ja.get(i);
+                    html.append("<a href='http://collections.ala.org.au/public/showDataProvider/")
+                            .append(jo.get(StringConstants.ID).toString())
+                            .append("' target='_blank'>").append(jo.get(StringConstants.NAME))
+                            .append("</a>: ").append(jo.get(StringConstants.COUNT)).append(" records <br />");
                 }
 
                 return html.toString();
@@ -1675,10 +1795,11 @@ public class BiocacheQuery implements Query, Serializable {
 
             if (result == 200) {
 
-                JSONObject jo = JSONObject.fromObject(response);
+                JSONParser jp = new JSONParser();
+                JSONObject jo = (JSONObject) jp.parse(response);
 
                 if (jo.containsKey("queryTitle")) {
-                    String title = jo.getString("queryTitle");
+                    String title = jo.get("queryTitle").toString();
 
                     //clean default parameter
                     title = title.replace(" AND <span>null</span>", "");

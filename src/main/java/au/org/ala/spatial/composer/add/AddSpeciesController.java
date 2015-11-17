@@ -161,6 +161,7 @@ public class AddSpeciesController extends UtilityComposer {
             window.setAllSpecies(true);
             window.loadAreaLayers();
             try {
+                window.setParent(getMapComposer());
                 window.doModal();
             } catch (Exception e) {
                 LOGGER.error("error opening AddSpeciesInArea.zul", e);
@@ -171,8 +172,10 @@ public class AddSpeciesController extends UtilityComposer {
             if (rSearch.isSelected()) {
                 AddSpeciesInArea window = (AddSpeciesInArea) Executions.createComponents("WEB-INF/zul/add/AddSpeciesInArea.zul", getMapComposer(), params);
                 window.setSpeciesParams(query, rank, taxon);
+                window.setExpertDistributions(chkExpertDistributions.isChecked());
                 window.loadAreaLayers();
                 try {
+                    window.setParent(getMapComposer());
                     window.doModal();
                 } catch (Exception e) {
                     LOGGER.error("error opening AddSpeciesInArea.zul", e);
@@ -184,6 +187,7 @@ public class AddSpeciesController extends UtilityComposer {
                     loadedAssemblage = true;
                 } else {
                     AddSpeciesInArea window = (AddSpeciesInArea) Executions.createComponents("WEB-INF/zul/add/AddSpeciesInArea.zul", getMapComposer(), params);
+                    window.setExpertDistributions(chkExpertDistributions.isChecked());
                     //extract all lsids
                     StringBuilder sb = new StringBuilder();
                     for (Listitem li : lMultiple.getItems()) {
@@ -200,6 +204,7 @@ public class AddSpeciesController extends UtilityComposer {
                     window.setMultipleSpeciesUploadName(CommonData.lang("uploaded_species_list_layer_name"));
                     window.loadAreaLayers();
                     try {
+                        window.setParent(getMapComposer());
                         window.doModal();
                     } catch (Exception e) {
                         LOGGER.error("error opening AddSpeciesInArea.zul", e);
@@ -216,6 +221,7 @@ public class AddSpeciesController extends UtilityComposer {
                 window.setMultipleSpeciesUploadName(CommonData.lang("uploaded_species_list_layer_name"));
                 window.loadAreaLayers();
                 try {
+                    window.setParent(getMapComposer());
                     window.doModal();
                 } catch (Exception e) {
                     LOGGER.error("error opening AddSpeciesInArea.zul", e);
@@ -298,6 +304,7 @@ public class AddSpeciesController extends UtilityComposer {
                     && CommonData.getSettings().getProperty("import.points.layers-service", "false").equals("false")) {
                 SandboxPasteController spc = (SandboxPasteController) Executions.createComponents("WEB-INF/zul/sandbox/SandboxPaste.zul", getMapComposer(), null);
                 spc.setAddToMap(true);
+                spc.setParent(getMapComposer());
                 spc.doModal();
             } else {
                 UploadSpeciesController usc = (UploadSpeciesController) Executions.createComponents("WEB-INF/zul/input/UploadSpecies.zul", getMapComposer(), null);
@@ -311,6 +318,7 @@ public class AddSpeciesController extends UtilityComposer {
                 }
                 usc.setAddToMap(true);
                 usc.setDefineArea(chkArea.isChecked());
+                usc.setParent(getMapComposer());
                 usc.doModal();
             }
         } catch (Exception e) {
@@ -649,6 +657,7 @@ public class AddSpeciesController extends UtilityComposer {
             });
 
             try {
+                dialog.setParent(this);
                 dialog.doModal();
 
             } catch (Exception e) {
@@ -663,7 +672,7 @@ public class AddSpeciesController extends UtilityComposer {
         LOGGER.debug("Species list that was created : " + drUid);
         if (drUid != null) {
 
-            ((SpeciesListListbox.SpeciesListListModel) speciesListListbox.getModel()).refreshModel();
+            speciesListListbox.init();
             rUploadLSIDs.setSelected(true);
             onCheck$rgAddSpecies(null);
         }
@@ -705,6 +714,7 @@ public class AddSpeciesController extends UtilityComposer {
         });
 
         try {
+            window.setParent(this);
             window.doModal();
         } catch (Exception e) {
             LOGGER.error("error opening UploadSpeciesList.zul", e);

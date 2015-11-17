@@ -126,6 +126,7 @@ public class AddSpeciesInArea extends UtilityComposer {
 
                 Window window = (Window) Executions.createComponents("WEB-INF/zul/add/AddArea.zul", getParent(), winProps);
                 window.setAttribute("winProps", winProps, true);
+                window.setParent(getParent());
                 window.doModal();
             } else {
                 onFinish();
@@ -212,7 +213,7 @@ public class AddSpeciesInArea extends UtilityComposer {
             if (StringConstants.CURRENT.equals(area)) {
                 sa = new SelectedArea(null, getMapComposer().getViewArea());
             } else if (StringConstants.AUSTRALIA.equals(area)) {
-                sa = new SelectedArea(null, CommonData.AUSTRALIA_WKT);
+                sa = new SelectedArea(null, CommonData.getSettings().getProperty(CommonData.SPECIFIC_REGION_WKT));
             } else if (StringConstants.WORLD.equals(area)) {
                 sa = new SelectedArea(null, CommonData.WORLD_WKT);
             } else {

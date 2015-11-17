@@ -4,6 +4,7 @@
  */
 package au.org.emii.portal.composer.legend;
 
+import au.org.ala.legend.Facet;
 import au.org.ala.spatial.StringConstants;
 import au.org.ala.spatial.dto.ScatterplotDataDTO;
 import au.org.ala.spatial.util.CommonData;
@@ -15,14 +16,13 @@ import au.org.emii.portal.menu.HasMapLayer;
 import au.org.emii.portal.menu.MapLayer;
 import au.org.emii.portal.menu.SelectedArea;
 import au.org.emii.portal.util.LayerUtilitiesImpl;
-import net.sf.json.JSONArray;
-import org.ala.layers.legend.Facet;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.json.simple.JSONArray;
 import org.zkoss.zk.ui.Executions;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
@@ -109,10 +109,10 @@ public class LayerLegendScatterplotController extends UtilityComposer implements
             JSONArray ja = om.readValue(new URL(data.getImagePath()), JSONArray.class);
 
             data.setPrevSelection(new double[4]);
-            data.getPrevSelection()[0] = ja.getDouble(0);
-            data.getPrevSelection()[1] = ja.getDouble(1);
-            data.getPrevSelection()[2] = ja.getDouble(2);
-            data.getPrevSelection()[3] = ja.getDouble(3);
+            data.getPrevSelection()[0] = Double.parseDouble(ja.get(0).toString());
+            data.getPrevSelection()[1] = Double.parseDouble(ja.get(1).toString());
+            data.getPrevSelection()[2] = Double.parseDouble(ja.get(2).toString());
+            data.getPrevSelection()[3] = Double.parseDouble(ja.get(3).toString());
 
             Facet f = getFacetIn();
             if (f != null) {
@@ -444,8 +444,8 @@ public class LayerLegendScatterplotController extends UtilityComposer implements
             } else {
                 String name = "Previous area";
                 if (data.getHighlightSa().getWkt() != null) {
-                    if (data.getHighlightSa().getWkt().equals(CommonData.AUSTRALIA_WKT)) {
-                        name = "Australia";
+                    if (data.getHighlightSa().getWkt().equals(CommonData.getSettings().getProperty(CommonData.SPECIFIC_REGION_WKT))) {
+                        name = CommonData.getSettings().getProperty(CommonData.SPECIFIC_REGION_NAME);
                     } else if (data.getHighlightSa().getWkt().equals(CommonData.WORLD_WKT)) {
                         name = "World";
                     }

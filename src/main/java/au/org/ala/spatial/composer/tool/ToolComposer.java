@@ -19,13 +19,14 @@ import au.org.emii.portal.composer.UtilityComposer;
 import au.org.emii.portal.menu.MapLayer;
 import au.org.emii.portal.menu.SelectedArea;
 import au.org.emii.portal.util.LayerUtilitiesImpl;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.zkoss.util.media.Media;
 import org.zkoss.zk.ui.Components;
 import org.zkoss.zk.ui.Executions;
@@ -348,7 +349,7 @@ public class ToolComposer extends UtilityComposer {
                 for (Object o : cbLayer1.getItems()) {
                     Comboitem ci = (Comboitem) o;
                     JSONObject jo = ci.getValue();
-                    if (jo.getString(StringConstants.NAME).equals(mi.getValue())) {
+                    if (jo.get(StringConstants.NAME).toString().equals(mi.getValue())) {
                         cbLayer1.setSelectedItem(ci);
                         cbLayer1.setText(ci.getLabel());
                         toggles();
@@ -371,7 +372,7 @@ public class ToolComposer extends UtilityComposer {
                 for (Object o : cbLayer2.getItems()) {
                     Comboitem ci = (Comboitem) o;
                     JSONObject jo = ci.getValue();
-                    if (jo.getString(StringConstants.NAME).equals(mi.getValue())) {
+                    if (jo.get(StringConstants.NAME).equals(mi.getValue())) {
                         cbLayer2.setSelectedItem(ci);
                         cbLayer2.setText(ci.getLabel());
                         toggles();
@@ -593,11 +594,31 @@ public class ToolComposer extends UtilityComposer {
             List<MapLayer> layers = getMapComposer().getPolygonLayers();
             for (int i = 0; i < layers.size(); i++) {
                 MapLayer lyr = layers.get(i);
-                Checkbox rAr = new Checkbox(lyr.getDisplayName());
-                rAr.setValue(lyr.getWKT());
 
-                rAr.setParent(vboxArea);
-                vboxArea.insertBefore(rAr, cAreaCurrent);
+                //add only if missing
+                boolean found = false;
+                if (getFellow("vboxArea") != null) {
+                    List checkboxes = getFellow("vboxArea").getChildren();
+
+                    for (int j = 0; j < checkboxes.size(); j++) {
+                        if (checkboxes.get(j) instanceof Checkbox &&
+                                ((Checkbox) checkboxes.get(j)).getLabel().equals(lyr.getDisplayName())) {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (!found) {
+                    Checkbox rAr = new Checkbox(lyr.getDisplayName());
+                    rAr.setValue(lyr.getWKT());
+
+                    if (lyr.getDisplayName().equals(selectedAreaName)) {
+                        rAr.setChecked(true);
+                    }
+
+                    rAr.setParent(vboxArea);
+                    vboxArea.insertBefore(rAr, cAreaCurrent);
+                }
             }
         } catch (Exception e) {
             LOGGER.error(StringConstants.UNABLE_TO_LOAD_ACTIVE_AREA_LAYERS, e);
@@ -1046,7 +1067,12 @@ public class ToolComposer extends UtilityComposer {
                     if (isAreaHighlightTab()) {
                         loadAreaHighlightLayers(curTopArea.getDisplayName());
                     } else if (isAreaTab()) {
-                        loadAreaLayers(curTopArea.getDisplayName());
+                        //multiple areas can be defined
+                        if (getFellow("cAreaCurrent") != null) {
+                            loadAreaLayersCheckboxes(curTopArea.getDisplayName());
+                        } else {
+                            loadAreaLayers(curTopArea.getDisplayName());
+                        }
                     }
 
                     ok = true;
@@ -1058,7 +1084,12 @@ public class ToolComposer extends UtilityComposer {
             this.doModal();
 
             if (ok) {
-                onClick$btnOk(null);
+                //not multiple areas can be defined
+                if (getFellow("cAreaCurrent") == null) {
+                    onClick$btnOk(null);
+                } else if (rAreaCustom != null) {
+                    rAreaCustom.setSelected(false);
+                }
                 hasCustomArea = false;
             }
 
@@ -1094,6 +1125,7 @@ public class ToolComposer extends UtilityComposer {
 
                 Window window = (Window) Executions.createComponents("WEB-INF/zul/add/AddArea.zul", this, winProps);
                 window.setAttribute("winProps", winProps, true);
+                window.setParent(this);
                 window.doModal();
 
                 return;
@@ -1317,7 +1349,7 @@ public class ToolComposer extends UtilityComposer {
             if (StringConstants.CURRENT.equals(area)) {
                 sa = new SelectedArea(null, getMapComposer().getViewArea());
             } else if (StringConstants.AUSTRALIA.equals(area)) {
-                sa = new SelectedArea(null, CommonData.AUSTRALIA_WKT);
+                sa = new SelectedArea(null, CommonData.getSettings().getProperty(CommonData.SPECIFIC_REGION_WKT));
             } else if (StringConstants.WORLD.equals(area)) {
                 sa = new SelectedArea(null, CommonData.WORLD_WKT);
             } else {
@@ -1345,7 +1377,7 @@ public class ToolComposer extends UtilityComposer {
             if (StringConstants.CURRENT.equals(area)) {
                 sa = new SelectedArea(null, getMapComposer().getViewArea());
             } else if (StringConstants.AUSTRALIA.equals(area)) {
-                sa = new SelectedArea(null, CommonData.AUSTRALIA_WKT);
+                sa = new SelectedArea(null, CommonData.getSettings().getProperty(CommonData.SPECIFIC_REGION_WKT));
             } else if (StringConstants.WORLD.equals(area)) {
                 sa = new SelectedArea(null, CommonData.WORLD_WKT);
             } else {
@@ -1742,6 +1774,7 @@ public class ToolComposer extends UtilityComposer {
                         });
 
                         try {
+                            window.setParent(this);
                             window.doModal();
                         } catch (Exception e) {
                             LOGGER.error("error opening PasteLayerList.zul", e);
@@ -1758,6 +1791,7 @@ public class ToolComposer extends UtilityComposer {
                         });
 
                         try {
+                            window.setParent(this);
                             window.doModal();
                         } catch (Exception e) {
                             LOGGER.error("error opening UploadLayerList.zul", e);
@@ -1879,7 +1913,7 @@ public class ToolComposer extends UtilityComposer {
         // seek to and select the same layer in the list
         if (lbListLayers != null && cbLayer.getSelectedItem() != null) {
             JSONObject jo = cbLayer.getSelectedItem().getValue();
-            String[] layer = jo.getString(StringConstants.NAME).split("/");
+            String[] layer = jo.get(StringConstants.NAME).toString().split("/");
             lbListLayers.selectLayers(layer);
             cbLayer.setSelectedIndex(-1);
         }
@@ -1890,7 +1924,7 @@ public class ToolComposer extends UtilityComposer {
         // seek to and select the same layer in the list
         if (lbListLayers != null && cbLayerEnvironmentalOnly.getSelectedItem() != null) {
             JSONObject jo = cbLayerEnvironmentalOnly.getSelectedItem().getValue();
-            String[] layer = jo.getString(StringConstants.NAME).split("/");
+            String[] layer = jo.get(StringConstants.NAME).toString().split("/");
             lbListLayers.selectLayers(layer);
             cbLayerEnvironmentalOnly.setSelectedIndex(-1);
         }
@@ -1901,7 +1935,7 @@ public class ToolComposer extends UtilityComposer {
         // seek to and select the same layer in the list
         if (lbListLayers != null && cbLayerMix.getSelectedItem() != null) {
             JSONObject jo = cbLayerMix.getSelectedItem().getValue();
-            String[] layer = jo.getString(StringConstants.NAME).split("/");
+            String[] layer = jo.get(StringConstants.NAME).toString().split("/");
             lbListLayers.selectLayers(layer);
             cbLayerMix.setSelectedIndex(-1);
         }
@@ -2179,21 +2213,21 @@ public class ToolComposer extends UtilityComposer {
             if (s.length() > 0) {
                 JSONObject searchResult = processAdhoc(s);
                 try {
-                    JSONArray ja = searchResult.getJSONArray(StringConstants.VALUES);
+                    JSONArray ja = (JSONArray) searchResult.get(StringConstants.VALUES);
 
                     String sciname = "", family = "", kingdom = "", lsid = null;
                     for (int j = 0; j < ja.size(); j++) {
-                        if (StringConstants.SCIENTIFIC_NAME.equals(ja.getJSONObject(j).getString(StringConstants.NAME))) {
-                            sciname = ja.getJSONObject(j).getString(StringConstants.PROCESSED);
+                        if (StringConstants.SCIENTIFIC_NAME.equals(((JSONObject) ja.get(j)).get(StringConstants.NAME))) {
+                            sciname = ((JSONObject) ja.get(j)).get(StringConstants.PROCESSED).toString();
                         }
-                        if (StringConstants.FAMILY.equals(ja.getJSONObject(j).getString(StringConstants.NAME))) {
-                            family = ja.getJSONObject(j).getString(StringConstants.PROCESSED);
+                        if (StringConstants.FAMILY.equals(((JSONObject) ja.get(j)).get(StringConstants.NAME))) {
+                            family = ((JSONObject) ja.get(j)).get(StringConstants.PROCESSED).toString();
                         }
-                        if (StringConstants.KINGDOM.equals(ja.getJSONObject(j).getString(StringConstants.NAME))) {
-                            kingdom = ja.getJSONObject(j).getString(StringConstants.PROCESSED);
+                        if (StringConstants.KINGDOM.equals(((JSONObject) ja.get(j)).get(StringConstants.NAME))) {
+                            kingdom = ((JSONObject) ja.get(j)).get(StringConstants.PROCESSED).toString();
                         }
-                        if (StringConstants.TAXON_CONCEPT_ID.equals(ja.getJSONObject(j).getString(StringConstants.NAME))) {
-                            lsid = ja.getJSONObject(j).getString(StringConstants.PROCESSED);
+                        if (StringConstants.TAXON_CONCEPT_ID.equals(((JSONObject) ja.get(j)).get(StringConstants.NAME))) {
+                            lsid = ((JSONObject) ja.get(j)).get(StringConstants.PROCESSED).toString();
                         }
                     }
 
@@ -2250,21 +2284,21 @@ public class ToolComposer extends UtilityComposer {
             if (s.length() > 0) {
                 JSONObject searchResult = processAdhoc(s);
                 try {
-                    JSONArray ja = searchResult.getJSONArray(StringConstants.VALUES);
+                    JSONArray ja = (JSONArray) searchResult.get(StringConstants.VALUES);
 
                     String sciname = "", family = "", kingdom = "", lsid = null;
                     for (int j = 0; j < ja.size(); j++) {
-                        if (StringConstants.SCIENTIFIC_NAME.equals(ja.getJSONObject(j).getString(StringConstants.NAME))) {
-                            sciname = ja.getJSONObject(j).getString(StringConstants.PROCESSED);
+                        if (StringConstants.SCIENTIFIC_NAME.equals(((JSONObject) ja.get(j)).get(StringConstants.NAME))) {
+                            sciname = ((JSONObject) ja.get(j)).get(StringConstants.PROCESSED).toString();
                         }
-                        if (StringConstants.FAMILY.equals(ja.getJSONObject(j).getString(StringConstants.NAME))) {
-                            family = ja.getJSONObject(j).getString(StringConstants.PROCESSED);
+                        if (StringConstants.FAMILY.equals(((JSONObject) ja.get(j)).get(StringConstants.NAME))) {
+                            family = ((JSONObject) ja.get(j)).get(StringConstants.PROCESSED).toString();
                         }
-                        if (StringConstants.KINGDOM.equals(ja.getJSONObject(j).getString(StringConstants.NAME))) {
-                            kingdom = ja.getJSONObject(j).getString(StringConstants.PROCESSED);
+                        if (StringConstants.KINGDOM.equals(((JSONObject) ja.get(j)).get(StringConstants.NAME))) {
+                            kingdom = ((JSONObject) ja.get(j)).get(StringConstants.PROCESSED).toString();
                         }
-                        if (StringConstants.TAXON_CONCEPT_ID.equals(ja.getJSONObject(j).getString(StringConstants.NAME))) {
-                            lsid = ja.getJSONObject(j).getString(StringConstants.PROCESSED);
+                        if (StringConstants.TAXON_CONCEPT_ID.equals(((JSONObject) ja.get(j)).get(StringConstants.NAME))) {
+                            lsid = ((JSONObject) ja.get(j)).get(StringConstants.PROCESSED).toString();
                         }
                     }
 
@@ -2321,7 +2355,8 @@ public class ToolComposer extends UtilityComposer {
             post.setRequestEntity(sre);
             int result = client.executeMethod(post);
             if (result == 200) {
-                return JSONObject.fromObject(post.getResponseBodyAsString());
+                JSONParser jp = new JSONParser();
+                return (JSONObject) jp.parse(post.getResponseBodyAsString());
             }
         } catch (Exception e) {
             LOGGER.error("error processing species request: " + url + ", scientificName=" + scientificName, e);
@@ -2574,6 +2609,7 @@ public class ToolComposer extends UtilityComposer {
                     && CommonData.getSettings().getProperty("import.points.layers-service", "false").equals("false")) {
                 SandboxPasteController spc = (SandboxPasteController) Executions.createComponents("WEB-INF/zul/sandbox/SandboxPaste.zul", getMapComposer(), null);
                 spc.setAddToMap(true);
+                spc.setParent(getMapComposer());
                 spc.doModal();
             } else {
                 UploadSpeciesController usc = (UploadSpeciesController) Executions.createComponents("WEB-INF/zul/input/UploadSpecies.zul", this, null);
@@ -2586,6 +2622,7 @@ public class ToolComposer extends UtilityComposer {
                     usc.setTbInstructions("3. Select file");
                 }
                 usc.setAddToMap(true);
+                usc.setParent(this);
 
                 usc.doModal();
             }
@@ -2788,6 +2825,7 @@ public class ToolComposer extends UtilityComposer {
             });
 
             try {
+                dialog.setParent(this);
                 dialog.doModal();
 
             } catch (Exception e) {
@@ -2862,6 +2900,7 @@ public class ToolComposer extends UtilityComposer {
         });
 
         try {
+            window.setParent(this);
             window.doModal();
         } catch (Exception e) {
             LOGGER.error("error opening UploadSpeciesList.zul", e);

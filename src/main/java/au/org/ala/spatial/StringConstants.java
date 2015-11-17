@@ -177,7 +177,7 @@ public final class StringConstants {
     public static final String FLOAT_LEFT = "float:left;";
     public static final String FLOAT_RIGHT = "float:right;";
     public static final String TREES_HEADER = "treesHeader";
-    public static final String TREE_ID = "treeId";
+    public static final String STUDY_ID = "studyId";
     public static final String ANALYSIS = "Analysis";
     public static final String OCCURRENCE_DENSITY = "Occurrence Density";
     public static final String SPECIES_RICHNESS = "Species Richness";
@@ -231,7 +231,6 @@ public final class StringConstants {
     public static final String CHECKLIST_AREA = "checklistArea";
     public static final String CHECKLIST_SPECIES = "checklistSpecies";
     public static final String OCCURRENCES = "occurrences";
-    public static final String BIOSTOR = "biostor";
     public static final String SPATIAL_OCCURRENCES = "spatialOccurrences";
     public static final String EXPERT_DISTRIBUTIONS = "expertDistributions";
     public static final String GAZETTEER = "gazetteer";
@@ -270,6 +269,7 @@ public final class StringConstants {
     public static final String GEOM_IDX = "geom_idx";
     public static final String LSIDS = "lsids";
     public static final String SUB_SPECIES = "subspecies";
+    public static final String JOURNAL_MAP = "journalmap";
 
 
     private StringConstants() {

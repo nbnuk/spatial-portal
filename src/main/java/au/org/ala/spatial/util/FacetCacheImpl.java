@@ -1,7 +1,7 @@
 package au.org.ala.spatial.util;
 
+import au.org.ala.legend.QueryField;
 import au.org.ala.spatial.StringConstants;
-import org.ala.layers.legend.QueryField;
 import org.apache.log4j.Logger;
 import org.springframework.context.support.AbstractMessageSource;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -67,6 +67,16 @@ public class FacetCacheImpl implements FacetCache {
                     //TODO: update biocache i18n instead of doing this
                     if ("data_provider".equals(field)) {
                         i18n = "Data Provider";
+                    }
+
+                    //use current layer names for facets
+                    try {
+                        String layername = CommonData.getFacetLayerName(field);
+                        if (i18n == null || layername != null) {
+                            i18n = CommonData.getLayerDisplayName(layername);
+                        }
+                    } catch (Exception e) {
+                        
                     }
 
                     facetValues[i][0] = field;

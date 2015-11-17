@@ -31,7 +31,7 @@ a[rel="external"], a.external {
     margin: 5px 30px;
     text-align: center;
     color: white;
-    font-family: Arial, Helvetica, sans-serif;;
+    font-family: Roboto, Helvetica, "Helvetica Neue", Arial, sans-serif;
 }
 
 #ft * {
@@ -212,9 +212,11 @@ closebox a.helpButtonMain:hover {
 }
 
 .fancybox-close {
+    /*display:none;*/
     position: absolute;
-    top: -15px;
-    right: -15px;
+    top: 4px;
+    /*top: -15px;*/
+    right: 5px;
     width: 30px;
     height: 30px;
     background: transparent url('../img/fancybox.png') -40px 0px;
@@ -224,8 +226,8 @@ closebox a.helpButtonMain:hover {
 
 .fancybox-help {
     position: absolute;
-    top: -15px;
-    right: 15px;
+    top: 4px;
+    right: 32px;
     width: 30px;
     height: 50px;
     background: transparent url('../img/fancybox_help.png');
@@ -259,7 +261,7 @@ closebox a.helpButtonMain:hover {
 
 /* species info table start */
 .md_heading {
-    font-family: "Arial Narrow", Arial, Helvetica, sans-serif;
+    font-family: Roboto, Helvetica, "Helvetica Neue", Arial, sans-serif;
     font-size: 22.1px;
     /* color:#718804; */
     padding: 5px;
@@ -267,7 +269,7 @@ closebox a.helpButtonMain:hover {
 }
 
 .md_th {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: Roboto, Helvetica, "Helvetica Neue", Arial, sans-serif;
     font-size: 11px;
     font-weight: 700;
     font-style: normal;
@@ -299,7 +301,7 @@ closebox a.helpButtonMain:hover {
 
 .md_value {
     text-align: left;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: Roboto, Helvetica, "Helvetica Neue", Arial, sans-serif;
     font-size: 11px;
     line-height: 20.8px;
     padding: 5px;
@@ -319,7 +321,7 @@ closebox a.helpButtonMain:hover {
 
 /* Page font */
 .z-a, .z-label, .z-radio-content, .z-checkbox-content, body, .z-listcell-content, .z-listgroup-content, .z-listgroupfoot-content, .z-listfooter-content, .z-textbox, .z-decimalbox, .z-intbox, .z-longbox, .z-doublebox, .z-combobox-input, .z-bandbox-input, .z-datebox-input, .z-timebox-input, .z-spinner-input, .z-doublespinner-input, .z-caption, .z-caption-content, .z-row:hover > .z-row-inner > .z-row-content, .z-row, .z-row-inner, .z-row-content, .z-combobox-popup, .z-bandbox-popup, .z-datebox-popup, .z-timebox-popup {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: Roboto, Helvetica, "Helvetica Neue", Arial, sans-serif;
     font-size: 12px;
 }
 
@@ -467,7 +469,10 @@ z-listbox-autopaging .z-listcell-cnt {
 }*/
 
 .z-listheader-content, .z-listcell-content, .z-listgroup-content, .z-listgroupfoot-content, .z-listfooter-content {
-    padding: 0px;
+    padding-left: 2px;
+    padding-right: 2px;
+    padding-top: 0px;
+    padding-bottom: 0px;
 }
 
 .z-listcell-content img {
@@ -526,7 +531,7 @@ z-listbox-autopaging .z-listcell-cnt {
     background-color: #3C668D;
     color: #FFF;
     cursor: pointer;
-    font-family: Arial;
+    font-family: Roboto, Helvetica, "Helvetica Neue", Arial, sans-serif;
     font-size: x-small;
 }
 
@@ -542,7 +547,7 @@ z-listbox-autopaging .z-listcell-cnt {
 
 .z-listitem.z-listitem:hover>.z-listcell>.z-listcell-content {
     color: white;
-    background-color: #DF4A21;
+    background-color: #3FA9F5;
 }
 
 .z-window-shadow {
@@ -570,4 +575,40 @@ z-listbox-autopaging .z-listcell-cnt {
 .z-listheader-content {
     padding-left:5px;
     padding-right:5px;
+}
+
+.z-listheader-content, .z-listcell-content, .z-listgroup-content, .z-listgroupfoot-content, .z-listfooter-content {
+    font-family: Roboto, Helvetica, "Helvetica Neue", Arial, sans-serif;
+    line-height: 20px;
+}
+
+.z-listitem.z-listitem-selected > .z-listcell > .z-listcell-content {
+    font-family: Roboto, Helvetica, "Helvetica Neue", Arial, sans-serif;
+    line-height: 20px;
+    padding: 0px;
+}
+
+.z-listitem.z-listitem-selected > .z-listcell {
+    background: unset;
+    background-color: #A9A9A9;
+}
+
+.z-listitem.z-listitem:hover > .z-listcell {
+    background: unset;
+    background-color: #3FA9F5;
+}
+
+.z-paging-input {
+    width: 60px;
+}
+
+.z-listitem.z-listitem:hover > .z-listcell > .z-listcell-content > .z-a {
+    color: #FFFFFF;
+}
+
+.txtCoordinate .z-listcell-content > input[type="text"] {
+    border: 0px;
+    margin: 0px;
+    height: inherit;
+    padding: 0px;
 }

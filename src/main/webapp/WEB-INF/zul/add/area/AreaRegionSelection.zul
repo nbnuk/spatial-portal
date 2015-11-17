@@ -27,7 +27,7 @@
                 </combobox>
             </hbox>
             <separator/>
-            <label sclass="wCaption" value='For example: "Australian Capital Territory"'/>
+            <label sclass="wCaption" value='For example: "Cairngorms"'/>
             <separator />
             <hbox id="hbRadius" visible="false" width="100%">
                 <separator />

@@ -2,14 +2,13 @@ package au.org.emii.portal.util;
 
 
 import au.org.ala.spatial.StringConstants;
+import au.org.ala.spatial.util.Util;
 import au.org.emii.portal.lang.LanguagePack;
 import au.org.emii.portal.menu.MapLayer;
 import au.org.emii.portal.menu.MapLayerMetadata;
-import org.ala.layers.intersect.SimpleShapeFile;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class RemoteMapImpl implements RemoteMap {
@@ -33,13 +32,14 @@ public class RemoteMapImpl implements RemoteMap {
 
         wktLayer.setEnvColour(StringConstants.RED);
 
-        int r = 255;
-        int g = 0;
-        int b = 0;
+        int colour = Util.nextColour();
+        int r = (colour >> 16) & 0x000000ff;
+        int g = (colour >> 8) & 0x000000ff;
+        int b = (colour) & 0x000000ff;
 
-        wktLayer.setBlueVal(b);
-        wktLayer.setGreenVal(g);
         wktLayer.setRedVal(r);
+        wktLayer.setGreenVal(g);
+        wktLayer.setBlueVal(b);
 
         wktLayer.setType(LayerUtilitiesImpl.WKT);
         wktLayer.setWKT(wkt);
@@ -48,12 +48,7 @@ public class RemoteMapImpl implements RemoteMap {
             wktLayer.setMapLayerMetadata(new MapLayerMetadata());
         }
         wkt = wkt.replace(" (", "(").replace(", ", ",");
-        double[][] bbox = SimpleShapeFile.parseWKT(wkt).getBoundingBox();
-        List<Double> bb = new ArrayList<Double>();
-        bb.add(bbox[0][0]);
-        bb.add(bbox[0][1]);
-        bb.add(bbox[1][0]);
-        bb.add(bbox[1][1]);
+        List<Double> bb = Util.getBoundingBox(wkt);
         wktLayer.getMapLayerMetadata().setBbox(bb);
 
         return wktLayer;
@@ -138,9 +133,10 @@ public class RemoteMapImpl implements RemoteMap {
 
         layer.setEnvColour(StringConstants.RED);
 
-        int r = 255;
-        int g = 0;
-        int b = 0;
+        int colour = Util.nextColour();
+        int r = (colour >> 16) & 0x000000ff;
+        int g = (colour >> 8) & 0x000000ff;
+        int b = (colour) & 0x000000ff;
 
         layer.setBlueVal(b);
         layer.setGreenVal(g);

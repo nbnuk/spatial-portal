@@ -4,8 +4,8 @@
  */
 package au.org.emii.portal.menu;
 
+import au.org.ala.legend.Facet;
 import au.org.ala.spatial.util.Util;
-import org.ala.layers.legend.Facet;
 
 import java.io.Serializable;
 import java.text.DecimalFormat;
@@ -55,15 +55,19 @@ public class SelectedArea implements Serializable {
      */
     public String getKm2Area() {
         if (area == null) {
-            try {
-                double totalarea = Util
-                        .calculateArea(getWkt());
-                DecimalFormat df = new DecimalFormat("###,###.##");
-                area = df.format(totalarea / 1000.0 / 1000.0);
+            if (mapLayer != null && mapLayer.getAreaSqKm() != null && mapLayer.getAreaSqKm().length() > 0) {
+                area = mapLayer.getAreaSqKm();
+            } else {
+                try {
+                    double totalarea = Util
+                            .calculateArea(getWkt());
+                    DecimalFormat df = new DecimalFormat("###,###.##");
+                    area = df.format(totalarea / 1000.0 / 1000.0);
 
 
-            } catch (Exception e) {
-                area = "";
+                } catch (Exception e) {
+                    area = "";
+                }
             }
         }
         return area;

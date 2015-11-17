@@ -5,19 +5,27 @@
 package au.org.ala.spatial.util;
 
 import au.com.bytecode.opencsv.CSVReader;
+import au.org.ala.legend.QueryField;
 import au.org.ala.spatial.StringConstants;
+import au.org.ala.spatial.dto.SpeciesListItemDTO;
 import au.org.emii.portal.lang.LanguagePack;
 import au.org.emii.portal.lang.LanguagePackImpl;
 import au.org.emii.portal.util.PortalProperties;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import org.ala.layers.legend.QueryField;
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.Point;
+import com.vividsolutions.jts.io.WKTReader;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+import org.json.simple.parser.JSONParser;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URL;
 import java.util.*;
 
@@ -35,7 +43,8 @@ public final class CommonData {
     //common data
     public static final String WORLD_WKT = "POLYGON((-179.999 -89.999,-179.999 89.999,179.999 84.999,179.999 -89.999,-179.999 -89.999))";
     //NC: 20130319 changed to using the correct direction
-    public static final String AUSTRALIA_WKT = "POLYGON((112.0 -44.0,154.0 -44.0,154.0 -9.0,112.0 -9.0,112.0 -44.0))";
+    public static final String SPECIFIC_REGION_WKT = "default.wkt";
+    public static final String SPECIFIC_REGION_NAME = "default.name";
     public static final String PHYLOLIST_URL = "phylolist_url";
     //common parameters
     private static final String SAT_URL = "sat_url";
@@ -80,7 +89,7 @@ public final class CommonData {
     private static int maxQLength;
     private static Properties settings;
     //lsid counts, for species autocomplete
-    private static LsidCounts lsidCounts;
+    private static LsidCountsDynamic lsidCounts;
     private static String biocacheQc;
     private static List<LayerSelection> analysisLayerSets;
     private static String[][] facetNameExceptions;
@@ -94,7 +103,7 @@ public final class CommonData {
     private static List<String> i18nIgnoredPrefixes;
     //(2) for EnvironmentalList
     private static JSONObject distances;
-    private static Map<String, Map<String, Double>> distancesMap;
+    private static Map<String, Map<String, Double>> distancesMap = new HashMap<String, Map<String,Double>>();
     private static JSONObject copyDistances;
     private static Map<String, Map<String, Double>> copyDistancesMap;
     //(3) for layer list json
@@ -133,6 +142,7 @@ public final class CommonData {
     private static Long speciesListCountsUpdated = 0L;
     private static Map speciesListCountsKosher;
     private static Long speciesListCountsUpdatedKosher = 0L;
+    private static Map<String, Map<String, List<String>>> speciesListAdditionalColumns = new HashMap<String, Map<String, List<String>>>();
 
     private CommonData() {
         //to hide public constructor
@@ -183,6 +193,9 @@ public final class CommonData {
             i18nIgnoredPrefixes = new ArrayList<String>();
         }
 
+        //journalmap
+        initJournalmap();
+
         setupAnalysisLayerSets();
 
         initLayerDistances();
@@ -200,10 +213,14 @@ public final class CommonData {
         initI18nProperies();
 
         //(7) lsid counts
-        LsidCounts lc = new LsidCounts();
-        if (lc.getSize() > 0) {
-            lsidCounts = lc;
-        }
+        //LsidCounts lc = new LsidCounts();
+        //if (lc.getSize() > 0) {
+        //    lsidCounts = lc;
+        //}
+        lsidCounts.clear();
+
+        //species list additional columns
+        speciesListAdditionalColumns = initSpeciesListAdditionalColumns();
 
         // load the download reasons
         initDownloadReasons();
@@ -223,6 +240,7 @@ public final class CommonData {
 //            getSpeciesListCountsKosher(true);
 //            getSpeciesListCounts(true);
         }
+
 
         //(2) for EnvironmentalList
         if (copyDistances != null) {
@@ -288,13 +306,14 @@ public final class CommonData {
             int result = client.executeMethod(get);
 
             if (result == 200) {
-                copyDistances = JSONObject.fromObject(get.getResponseBodyAsString());
+                JSONParser jp = new JSONParser();
+                copyDistances = (JSONObject) jp.parse(get.getResponseBodyAsString());
 
 
                 //make map
                 copyDistancesMap = new HashMap<String, Map<String, Double>>();
                 for (Object okey : copyDistances.keySet()) {
-                    Double d = copyDistances.getDouble((String) okey);
+                    Double d = (Double) copyDistances.get((String) okey);
                     String[] parts = ((String) okey).split(" ");
 
                     Map<String, Double> part = copyDistancesMap.get(parts[0]);
@@ -336,7 +355,8 @@ public final class CommonData {
             int result = client.executeMethod(get);
 
             if (result == 200) {
-                copyLayerlistJSON = JSONArray.fromObject(get.getResponseBodyAsString());
+                JSONParser jp = new JSONParser();
+                copyLayerlistJSON = (JSONArray) jp.parse(get.getResponseBodyAsString());
             }
 
             addFieldsToLayers(copyLayerlistJSON);
@@ -353,29 +373,30 @@ public final class CommonData {
         GetMethod get = new GetMethod(fieldsURL);
         int result = client.executeMethod(get);
         if (result != 200) {
-            LOGGER.error("cannot retrive field list: " + fieldsURL);
+            LOGGER.error("cannot retrieve field list: " + fieldsURL);
             return;
         }
         String fields = get.getResponseBodyAsString();
-        JSONArray ja = JSONArray.fromObject(fields);
+        JSONParser jp = new JSONParser();
+        JSONArray ja = (JSONArray) jp.parse(fields);
 
         //attach to a new JSONArray in joLayers named Constants.FIELDS
         for (int j = 0; j < joLayers.size(); j++) {
-            JSONObject layer = joLayers.getJSONObject(j);
+            JSONObject layer = (JSONObject) joLayers.get(j);
             if (layer.containsKey(StringConstants.ID)) {
                 for (int i = 0; i < ja.size(); i++) {
-                    JSONObject jo = ja.getJSONObject(i);
+                    JSONObject jo = (JSONObject) ja.get(i);
                     if (
                             /*jo.containsKey("defaultlayer") && StringConstants.TRUE.equals(jo.getString("defaultlayer"))
 
                                     &&
                                      */
-                            jo.containsKey("spid") && jo.getString("spid").equals(layer.getString(StringConstants.ID))) {
+                            jo.containsKey("spid") && jo.get("spid").toString().equals(layer.get(StringConstants.ID).toString())) {
                         //add to layer
                         if (!layer.containsKey(StringConstants.FIELDS)) {
                             layer.put(StringConstants.FIELDS, new JSONArray());
                         }
-                        layer.getJSONArray(StringConstants.FIELDS).add(jo);
+                        ((JSONArray) layer.get(StringConstants.FIELDS)).add(jo);
                     }
                 }
             }
@@ -402,32 +423,33 @@ public final class CommonData {
             client.executeMethod(get);
             String slist = get.getResponseBodyAsString();
 
-            JSONArray ja = JSONArray.fromObject(slist);
+            JSONParser jp = new JSONParser();
+            JSONArray ja = (JSONArray) jp.parse(slist);
 
             LOGGER.debug(ja.size() + " species wms distributions");
 
             for (int i = 0; i < ja.size(); i++) {
-                JSONObject jo = ja.getJSONObject(i);
+                JSONObject jo = (JSONObject) ja.get(i);
                 if (jo.containsKey(StringConstants.LSID) && jo.containsKey(StringConstants.WMSURL)) {
                     //manage lsids with multiple wmsurls
-                    String lsid = jo.getString(StringConstants.LSID);
+                    String lsid = jo.get(StringConstants.LSID).toString();
 
                     //wms
                     String[] urls = copySpeciesWmsLayers.get(lsid);
                     if (urls != null) {
                         String[] newUrls = new String[urls.length + 1];
                         System.arraycopy(urls, 0, newUrls, 0, urls.length);
-                        newUrls[newUrls.length - 1] = jo.getString(StringConstants.WMSURL);
+                        newUrls[newUrls.length - 1] = jo.get(StringConstants.WMSURL).toString();
                         urls = newUrls;
                     } else {
-                        urls = new String[]{jo.getString(StringConstants.WMSURL)};
+                        urls = new String[]{jo.get(StringConstants.WMSURL).toString()};
                     }
                     copySpeciesWmsLayers.put(lsid, urls);
 
                     //metadata
                     String m = "";
                     if (jo.containsKey(StringConstants.METADATA_U)) {
-                        m = jo.getString(StringConstants.METADATA_U);
+                        m = jo.get(StringConstants.METADATA_U).toString();
                     }
                     String[] md = copySpeciesMetadataLayers.get(lsid);
                     if (md != null) {
@@ -443,7 +465,7 @@ public final class CommonData {
                     //spcode
                     m = "";
                     if (jo.containsKey(StringConstants.SPCODE)) {
-                        m = jo.getString(StringConstants.SPCODE);
+                        m = jo.get(StringConstants.SPCODE).toString();
                     }
                     md = copySpeciesSpcodeLayers.get(lsid);
                     if (md != null) {
@@ -459,21 +481,21 @@ public final class CommonData {
                     //others
                     String spcode = null;
                     if (jo.containsKey(StringConstants.SPCODE)) {
-                        spcode = jo.getString(StringConstants.SPCODE);
+                        spcode = jo.get(StringConstants.SPCODE).toString();
                     }
                     lsid = null;
                     if (jo.containsKey(StringConstants.LSID)) {
-                        lsid = jo.getString(StringConstants.LSID);
+                        lsid = jo.get(StringConstants.LSID).toString();
                     }
                     String pid = null;
                     if (jo.containsKey(StringConstants.PID)) {
-                        pid = jo.getString(StringConstants.PID);
+                        pid = jo.get(StringConstants.PID).toString();
                     }
                     String type = null;
                     if (jo.containsKey(StringConstants.TYPE)) {
-                        type = jo.getString(StringConstants.TYPE);
+                        type = jo.get(StringConstants.TYPE).toString();
                     }
-                    copySpeciesWmsLayersBySpcode.put(spcode, new String[]{jo.getString(StringConstants.SCIENTIFIC), jo.getString(StringConstants.WMSURL), m, lsid, pid, type});
+                    copySpeciesWmsLayersBySpcode.put(spcode, new String[]{jo.get(StringConstants.SCIENTIFIC).toString(), jo.get(StringConstants.WMSURL).toString(), m, lsid, pid, type});
                 }
             }
 
@@ -496,32 +518,32 @@ public final class CommonData {
 
             if (result == 200) {
                 slist = get.getResponseBodyAsString();
-                ja = JSONArray.fromObject(slist);
+                ja = (JSONArray) jp.parse(slist);
 
                 LOGGER.debug(ja.size() + " species wms checklists");
 
                 for (int i = 0; i < ja.size(); i++) {
-                    JSONObject jo = ja.getJSONObject(i);
+                    JSONObject jo = (JSONObject) ja.get(i);
                     if (jo.containsKey(StringConstants.LSID) && jo.containsKey(StringConstants.WMSURL)) {
                         //manage lsids with multiple wmsurls
-                        String lsid = jo.getString(StringConstants.LSID);
+                        String lsid = jo.get(StringConstants.LSID).toString();
 
                         //wms
                         String[] urls = copyChecklistspeciesWmsLayers.get(lsid);
                         if (urls != null) {
                             String[] newUrls = new String[urls.length + 1];
                             System.arraycopy(urls, 0, newUrls, 0, urls.length);
-                            newUrls[newUrls.length - 1] = jo.getString(StringConstants.WMSURL);
+                            newUrls[newUrls.length - 1] = jo.get(StringConstants.WMSURL).toString();
                             urls = newUrls;
                         } else {
-                            urls = new String[]{jo.getString(StringConstants.WMSURL)};
+                            urls = new String[]{jo.get(StringConstants.WMSURL).toString()};
                         }
                         copyChecklistspeciesWmsLayers.put(lsid, urls);
 
                         //metadata
                         String m = "";
                         if (jo.containsKey(StringConstants.METADATA_U)) {
-                            m = jo.getString(StringConstants.METADATA_U);
+                            m = jo.get(StringConstants.METADATA_U).toString();
                         }
                         String[] md = copyChecklistspeciesMetadataLayers.get(lsid);
                         if (md != null) {
@@ -537,7 +559,7 @@ public final class CommonData {
                         //spcode
                         m = "";
                         if (jo.containsKey(StringConstants.SPCODE)) {
-                            m = jo.getString(StringConstants.SPCODE);
+                            m = jo.get(StringConstants.SPCODE).toString();
                         }
                         md = copyChecklistspeciesSpcodeLayers.get(lsid);
                         if (md != null) {
@@ -551,8 +573,8 @@ public final class CommonData {
                         copyChecklistspeciesSpcodeLayers.put(lsid, md);
 
                         //by spcode
-                        String spcode = jo.getString(StringConstants.SPCODE);
-                        copyChecklistspeciesWmsLayersBySpcode.put(spcode, new String[]{jo.getString(StringConstants.SCIENTIFIC), jo.getString(StringConstants.WMSURL), m});
+                        String spcode = jo.get(StringConstants.SPCODE).toString();
+                        copyChecklistspeciesWmsLayersBySpcode.put(spcode, new String[]{jo.get(StringConstants.SCIENTIFIC).toString(), jo.get(StringConstants.WMSURL).toString(), m});
                     }
                 }
             }
@@ -697,7 +719,7 @@ public final class CommonData {
         String facetName = layer;
         JSONObject f = layerToFacet.get(layer.toLowerCase());
         if (f != null) {
-            facetName = f.getString(StringConstants.ID);
+            facetName = f.get(StringConstants.ID).toString();
         } else {
             facetName = getLayerFacetNameDefault(layer);
         }
@@ -708,7 +730,7 @@ public final class CommonData {
         String facetName = layer;
         JSONObject f = layerToFacetDefault.get(layer.toLowerCase());
         if (f != null) {
-            facetName = f.getString(StringConstants.ID);
+            facetName = f.get(StringConstants.ID).toString();
         }
         return facetName;
     }
@@ -716,7 +738,7 @@ public final class CommonData {
     public static String getFacetLayerName(String facet) {
         JSONObject jo = facetToLayer.get(facet);
         if (jo != null) {
-            return jo.getString(StringConstants.NAME);
+            return jo.get(StringConstants.NAME).toString();
         } else {
             return getFacetLayerNameDefault(facet);
         }
@@ -725,7 +747,7 @@ public final class CommonData {
     public static String getFacetLayerNameDefault(String facet) {
         JSONObject jo = facetToLayerDefault.get(facet);
         if (jo != null) {
-            return jo.getString(StringConstants.NAME);
+            return jo.get(StringConstants.NAME).toString();
         } else {
             return null;
         }
@@ -734,7 +756,7 @@ public final class CommonData {
     public static String getFacetLayerDisplayName(String facet) {
         JSONObject layer = facetToLayer.get(facet);
         if (layer != null && layer.containsKey(StringConstants.DISPLAYNAME)) {
-            return layer.getString(StringConstants.DISPLAYNAME);
+            return layer.get(StringConstants.DISPLAYNAME).toString();
         }
         return getFacetLayerDisplayNameDefault(facet);
     }
@@ -742,7 +764,7 @@ public final class CommonData {
     public static String getFacetLayerDisplayNameDefault(String facet) {
         JSONObject layer = facetToLayerDefault.get(facet);
         if (layer != null && layer.containsKey(StringConstants.DISPLAYNAME)) {
-            return layer.getString(StringConstants.DISPLAYNAME);
+            return layer.get(StringConstants.DISPLAYNAME).toString();
         }
         return null;
     }
@@ -750,9 +772,9 @@ public final class CommonData {
     public static String getLayerDisplayName(String name) {
         JSONObject layer;
         for (int i = 0; i < layerlistJSON.size(); i++) {
-            layer = layerlistJSON.getJSONObject(i);
-            if (layer.getString(StringConstants.NAME).equalsIgnoreCase(name) && layer.containsKey(StringConstants.DISPLAYNAME)) {
-                return layer.getString(StringConstants.DISPLAYNAME);
+            layer = (JSONObject) layerlistJSON.get(i);
+            if (layer.get(StringConstants.NAME).toString().equalsIgnoreCase(name) && layer.containsKey(StringConstants.DISPLAYNAME)) {
+                return layer.get(StringConstants.DISPLAYNAME).toString();
             }
         }
         return null;
@@ -767,24 +789,24 @@ public final class CommonData {
 
             if (copyLayerlistJSON != null) {
                 for (int i = 0; i < copyLayerlistJSON.size(); i++) {
-                    JSONObject jo = copyLayerlistJSON.getJSONObject(i);
+                    JSONObject jo = (JSONObject) copyLayerlistJSON.get(i);
 
                     if (jo.containsKey(StringConstants.FIELDS)) {
-                        JSONArray ja = jo.getJSONArray(StringConstants.FIELDS);
+                        JSONArray ja = (JSONArray) jo.get(StringConstants.FIELDS);
                         for (int j = 0; j < ja.size(); j++) {
-                            JSONObject f = ja.getJSONObject(j);
-                            if (f.containsKey("indb") && f.getBoolean("indb")) {
-                                LOGGER.debug("adding indb: " + jo.getString(StringConstants.NAME) + ", " + f.getString(StringConstants.ID));
-                                String layer = jo.getString(StringConstants.NAME);
-                                String facet = f.getString(StringConstants.ID);
+                            JSONObject f = (JSONObject) ja.get(j);
+                            if (f.containsKey("indb") && f.get("indb").toString().equalsIgnoreCase("true")) {
+                                LOGGER.debug("adding indb: " + jo.get(StringConstants.NAME) + ", " + f.get(StringConstants.ID));
+                                String layer = jo.get(StringConstants.NAME).toString();
+                                String facet = f.get(StringConstants.ID).toString();
 
                                 ltf.put(layer.toLowerCase(), f);
                                 ftl.put(facet, jo);
                             }
-                            if (f.containsKey("defaultlayer") && f.getBoolean("defaultlayer")) {
-                                LOGGER.debug("adding defaultlayer: " + jo.getString(StringConstants.NAME) + ", " + f.getString(StringConstants.ID));
-                                String layer = jo.getString(StringConstants.NAME);
-                                String facet = f.getString(StringConstants.ID);
+                            if (f.containsKey("defaultlayer") && f.get("defaultlayer").toString().equalsIgnoreCase("true")) {
+                                LOGGER.debug("adding defaultlayer: " + jo.get(StringConstants.NAME) + ", " + f.get(StringConstants.ID));
+                                String layer = jo.get(StringConstants.NAME).toString();
+                                String facet = f.get(StringConstants.ID).toString();
 
                                 ltfdefault.put(layer.toLowerCase(), f);
                                 ftldefault.put(facet, jo);
@@ -820,6 +842,19 @@ public final class CommonData {
         try {
             Properties p = new Properties();
             p.load(new URL(i18nURL).openStream());
+
+            //append facet.{fieldId}={layer display name}
+            JSONArray jsonArray = getLayerListJSONArray();
+
+            if(jsonArray != null){
+                for (Object o : jsonArray) {
+                    JSONObject jo = (JSONObject) o;
+                    String facetId = getLayerFacetName(jo.get("name").toString());
+                    if (facetId != null) {
+                        p.put("facet." + facetId, ((JSONObject) o).get("displayname").toString());
+                    }
+                }
+            }
 
             i18nProperites = p;
         } catch (Exception e) {
@@ -920,7 +955,8 @@ public final class CommonData {
             int result = client.executeMethod(get);
 
             if (result == 200) {
-                copyDownloadReasons = JSONArray.fromObject(get.getResponseBodyAsString());
+                JSONParser jp = new JSONParser();
+                copyDownloadReasons = (JSONArray) jp.parse(get.getResponseBodyAsString());
             }
         } catch (Exception e) {
             copyDownloadReasons = null;
@@ -943,9 +979,11 @@ public final class CommonData {
     public static JSONObject getLayer(String name) {
         JSONObject layer = null;
         for (int i = 0; i < layerlistJSON.size(); i++) {
-            layer = layerlistJSON.getJSONObject(i);
-            if (layer.getString(StringConstants.NAME).equalsIgnoreCase(name)) {
+            layer = (JSONObject) layerlistJSON.get(i);
+            if (layer.get(StringConstants.NAME).toString().equalsIgnoreCase(name)) {
                 break;
+            } else {
+                layer = null;
             }
         }
         return layer;
@@ -965,14 +1003,15 @@ public final class CommonData {
             LOGGER.debug("initBiocacheLayerList: " + url + " > " + result);
             if (result == 200) {
                 Set<String> set = new HashSet<String>();
-                JSONArray ja = JSONArray.fromObject(get.getResponseBodyAsString());
+                JSONParser jp = new JSONParser();
+                JSONArray ja = (JSONArray) jp.parse(get.getResponseBodyAsString());
                 LOGGER.debug("size: " + ja.size());
 
                 // Populate the biocache layer list with the names of all
                 // indexed fields. The additional non-layer field names will
                 // not cause a problem here.
                 for (int i = 0; i < ja.size(); i++) {
-                    String layer = ja.getJSONObject(i).getString(StringConstants.NAME);
+                    String layer = ((JSONObject) ja.get(i)).get(StringConstants.NAME).toString();
                     set.add(layer);
                 }
                 if (!ja.isEmpty()) {
@@ -1052,7 +1091,7 @@ public final class CommonData {
         return bieWebServer;
     }
 
-    public static LsidCounts getLsidCounts() {
+    public static LsidCountsDynamic getLsidCounts() {
         return lsidCounts;
     }
 
@@ -1149,5 +1188,221 @@ public final class CommonData {
             speciesListCountsKosher = m;
         }
         return speciesListCountsKosher;
+    }
+
+    //see https://www.journalmap.org/search
+    //don't refresh this on cache refresh
+    static List<JSONObject> journalMapArticles = null;
+    static List<JournalMapLocation> journalMapLocations = null;
+
+    private static void initJournalmap() {
+        if (journalMapArticles != null && journalMapArticles.size() > 0) {
+            return;
+        }
+
+        journalMapArticles = new ArrayList<JSONObject>();
+        journalMapLocations = new ArrayList<JournalMapLocation>();
+
+        try {
+
+            String journalmapUrl = CommonData.getSettings().getProperty("journalmap.url", null);
+            String journalmapKey = CommonData.getSettings().getProperty("journalmap.api_key", null);
+
+            //try disk cache
+            File jaFile = new File("/data/webportal/journalmapArticles.json");
+
+            if (jaFile.exists()) {
+                JSONParser jp = new JSONParser();
+                JSONArray ja = (JSONArray) jp.parse(FileUtils.readFileToString(jaFile));
+
+                for (int i = 0; i < ja.size(); i++) {
+                    journalMapArticles.add((JSONObject) ja.get(i));
+                }
+            } else if (journalmapKey != null && !journalmapKey.isEmpty()) {
+
+                int page = 1;
+                int maxpage = 0;
+                List<String> publicationsIds = new ArrayList<String>();
+                while (page == 1 || page <= maxpage) {
+                    HttpClient client = new HttpClient();
+
+                    String url = journalmapUrl + "api/publications.json?version=1.0&key=" + journalmapKey + "&page=" + page;
+                    page = page + 1;
+
+                    LOGGER.debug("journalmap url: " + url);
+
+                    GetMethod get = new GetMethod(url);
+
+                    int result = client.executeMethod(get);
+
+                    //update maxpage
+                    maxpage = Integer.parseInt(get.getResponseHeader("X-Pages").getValue());
+
+                    //cache
+                    JSONParser jp = new JSONParser();
+                    JSONArray jcollection = (JSONArray) jp.parse(get.getResponseBodyAsString());
+                    for (int i = 0; i < jcollection.size(); i++) {
+                        if (((JSONObject) jcollection.get(i)).containsKey("id")) {
+                            publicationsIds.add(((JSONObject) jcollection.get(i)).get("id").toString());
+                            LOGGER.debug("found publication: " + ((JSONObject) jcollection.get(i)).get("id").toString() + ", article_count: " + ((JSONObject) jcollection.get(i)).get("articles_count").toString());
+                        }
+                    }
+                }
+
+                for (String publicationsId : publicationsIds) {
+                    //allow for collection failure
+                    try {
+                        page = 1;
+                        maxpage = 0;
+                        while (page == 1 || page <= maxpage) {
+                            HttpClient client = new HttpClient();
+
+                            String url = journalmapUrl + "api/articles.json?version=1.0&key=" + journalmapKey + "&page=" + page + "&publication_id=" + publicationsId;
+                            page = page + 1;
+
+                            LOGGER.debug("journalmap url: " + url);
+
+                            GetMethod get = new GetMethod(url);
+
+                            int result = client.executeMethod(get);
+
+                            //update maxpage
+                            maxpage = Integer.parseInt(get.getResponseHeader("X-Pages").getValue());
+
+                            //cache
+                            JSONParser jp = new JSONParser();
+                            JSONArray jarticles = (JSONArray) jp.parse(get.getResponseBodyAsString());
+                            for (int j = 0; j < jarticles.size(); j++) {
+                                JSONObject o = (JSONObject) jarticles.get(j);
+                                if (o.containsKey("locations")) {
+                                    journalMapArticles.add(o);
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        LOGGER.error("journalmap - failure to get articles from publicationsId: " + publicationsId);
+                    }
+                }
+
+                //save to disk cache
+                FileWriter fw = new FileWriter(jaFile);
+                JSONValue.writeJSONString(journalMapArticles, fw);
+                fw.flush();
+                fw.close();
+            }
+        } catch (Exception e) {
+            LOGGER.error("error initialising journalmap data", e);
+        }
+
+        //construct locations list
+        for (int i = 0; i < journalMapArticles.size(); i++) {
+            JSONArray locations = (JSONArray) journalMapArticles.get(i).get("locations");
+
+            for (int j = 0; j < locations.size(); j++) {
+                JSONObject l = (JSONObject) locations.get(j);
+                double longitude = Double.parseDouble(l.get("longitude").toString());
+                double latitude = Double.parseDouble(l.get("latitude").toString());
+                journalMapLocations.add(new JournalMapLocation(longitude, latitude, i));
+            }
+        }
+    }
+
+    static class JournalMapLocation {
+        Point point;
+        int idx;
+
+        public JournalMapLocation(double longitude, double latitude, int idx) {
+            Coordinate c = new Coordinate(longitude, latitude);
+            GeometryFactory gf = new GeometryFactory();
+            point = gf.createPoint(c);
+
+            this.idx = idx;
+        }
+    }
+
+    public static List<JSONObject> filterJournalMapArticles(String wkt) {
+        List<JSONObject> list = new ArrayList<JSONObject>();
+        Set<Integer> set = new HashSet<Integer>();
+
+        try {
+            WKTReader wktReader = new WKTReader();
+            com.vividsolutions.jts.geom.Geometry g = wktReader.read(wkt);
+
+            for (JournalMapLocation l : journalMapLocations) {
+                //only add it once (articles can have >1 location)
+                if (!set.contains(l.idx)) {
+                    if (g.contains(l.point)) {
+                        list.add(journalMapArticles.get(l.idx));
+                        set.add(l.idx);
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("error intersecting wkt with journal map articles", e);
+        }
+
+        return list;
+    }
+
+    private static Map<String, Map<String, List<String>>> initSpeciesListAdditionalColumns() {
+        Map<String, Map<String, List<String>>> map = new HashMap<String, Map<String, List<String>>>();
+
+        String slac = settings.getProperty("species.list.additional.columns", "");
+        String[] columns = slac.split("\\|");
+        for (String line : columns) {
+            String[] parts = line.split(",");
+            if (parts.length > 1) {
+                String columnTitle = parts[0];
+                for (int i = 1; i < parts.length; i++) {
+                    try {
+                        JSONParser jp = new JSONParser();
+                        InputStream is = new URL(CommonData.getSpeciesListServer() + "/ws/speciesList?druid=" + parts[i]).openStream();
+                        String listName = ((JSONObject) jp.parse(IOUtils.toString(is))).get("listName").toString();
+                        is.close();
+
+                        Map<String, List<String>> m = new HashMap<String, List<String>>();
+                        ArrayList<String> sp = new ArrayList<String>();
+                        //fetch species list
+
+                        Collection<SpeciesListItemDTO> list = SpeciesListUtil.getListItems(parts[i]);
+                        for (SpeciesListItemDTO item : list) {
+                            if (item.getLsid() != null && !item.getLsid().isEmpty()) sp.add(item.getLsid());
+                        }
+
+                        Collections.sort(sp);
+                        m.put(listName, sp);
+                        map.put(columnTitle, m);
+                    } catch (Exception e) {
+                        LOGGER.error("error reading list: " + parts[i], e);
+                    }
+                }
+            }
+        }
+
+        return map;
+    }
+
+    public static List<String> getSpeciesListAdditionalColumnsHeader() {
+        return new ArrayList<String>(speciesListAdditionalColumns.keySet());
+    }
+
+    public static List<String> getSpeciesListAdditionalColumns(List<String> headers, String lsid) {
+        List<String> list = new ArrayList<String>();
+        for (int i = 0; i < headers.size(); i++) {
+            StringBuilder sb = new StringBuilder();
+            for (Map.Entry<String, List<String>> entry : speciesListAdditionalColumns.get(headers.get(i)).entrySet()) {
+                List<String> sorted = entry.getValue();
+                if (sorted != null && Collections.binarySearch(sorted, lsid) >= 0) {
+                    if (sb.length() > 0) {
+                        sb.append("|");
+                    }
+                    sb.append(entry.getKey());
+                }
+            }
+            list.add(sb.toString());
+        }
+
+        return list;
     }
 }

@@ -13,7 +13,7 @@
         <n:div class="fancybox-bg" id="fancybox-bg-s" />
         <n:div class="fancybox-bg" id="fancybox-bg-w" />
         <a sclass="fancybox-close" onClick="addtoolwindow.onClick$btnCancel(null)" style="display: inline" />
-        <n:a class="fancybox-help" n:onClick="loadHelp('prediction-tools')" style="display: inline" />
+        <n:a class="fancybox-help" n:href="${addtoolwindow.getMapComposer().getSettingsSupplementary().getProperty('help_url')}/spatial-portal-help/prediction-tools" n:target="_blank"   style="display: inline" />
         <caption id="cTitle" />
         <separator />
         <hbox id="stepCounter">
@@ -62,7 +62,7 @@
                     <separator />
                     <radiogroup id="rgArea" orient="vertical" onOK="addtoolwindow.onClick$btnOk(null)" focus="true">
                         <radio id="rAreaCurrent" label="Current extent" value="current" />
-                        <radio id="rAreaAustralia" label="Australia" value="australia" />
+                        <radio id="rAreaAustralia" label="${addtoolwindow.getMapComposer().getSettingsSupplementary().getProperty('default.name')}" value="australia" />
                         <radio id="rAreaWorld" label="World" value="world" />
                         <radio id="rAreaCustom" label="Define new area" value="custom" />
                     </radiogroup>
@@ -186,7 +186,10 @@
                                                         <separator height="2px" />
                                                         <label id="lLayersSelected" value="0 layers selected" sclass="wSubLabel" />
                                                     </vbox></hbox>
+
+                        <label id="runningMsg1" style="color:red" value="GDM Step 1 in progress..." visible="false" />
                     </vbox>
+
 
                 </div>
 
@@ -296,6 +299,7 @@
                         <textbox id="tLayerList" width="500px" height="80px" readonly="true" multiline="true"/>
                         <button id="bLayerListDownload2" label="Export selection" visible="false" sclass="goButton" />
                     </vbox>
+                    <label id="runningMsg2" style="color:red" value="GDM Step 2 in progress..." visible="false" />
                 </div>
             </vbox>
         </hbox>
