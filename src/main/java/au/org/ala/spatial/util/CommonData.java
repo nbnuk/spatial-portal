@@ -237,10 +237,7 @@ public final class CommonData {
         //need this data if using SP's endemic method
         if (CommonData.getSettings().containsKey("endemic.sp.method")
                 && CommonData.getSettings().getProperty("endemic.sp.method").equals("true")) {
-//            getSpeciesListCountsKosher(true);
-//            getSpeciesListCounts(true);
         }
-
 
         //(2) for EnvironmentalList
         if (copyDistances != null) {
@@ -281,8 +278,6 @@ public final class CommonData {
         if (copyChecklistspeciesWmsLayersBySpcode != null) {
             checklistspeciesWmsLayersBySpcode = copyChecklistspeciesWmsLayersBySpcode;
         }
-
-
     }
 
     public static JSONArray getDownloadReasons() {
@@ -386,13 +381,7 @@ public final class CommonData {
             if (layer.containsKey(StringConstants.ID)) {
                 for (int i = 0; i < ja.size(); i++) {
                     JSONObject jo = (JSONObject) ja.get(i);
-                    if (
-                            /*jo.containsKey("defaultlayer") && StringConstants.TRUE.equals(jo.getString("defaultlayer"))
-
-                                    &&
-                                     */
-                            jo.containsKey("spid") && jo.get("spid").toString().equals(layer.get(StringConstants.ID).toString())) {
-                        //add to layer
+                    if (jo.containsKey("spid") && jo.get("spid").toString().equals(layer.get(StringConstants.ID).toString())) {
                         if (!layer.containsKey(StringConstants.FIELDS)) {
                             layer.put(StringConstants.FIELDS, new JSONArray());
                         }

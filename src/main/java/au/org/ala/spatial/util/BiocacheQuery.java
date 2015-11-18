@@ -36,18 +36,18 @@ import java.util.zip.GZIPInputStream;
  * @author Adam
  */
 public class BiocacheQuery implements Query, Serializable {
-    static final String SAMPLING_SERVICE_CSV_GZIP = "/webportal/occurrences.gz?";
-    static final String SAMPLING_SERVICE = "/webportal/occurrences?";
+    static final String SAMPLING_SERVICE_CSV_GZIP = "/mapping/occurrences.gz?";
+    static final String SAMPLING_SERVICE = "/mapping/occurrences?";
     static final String SPECIES_LIST_SERVICE_CSV = "/occurrences/facets/download?facets=species_guid&lookup=true&count=true&";
     static final String SPECIES_COUNT_SERVICE = "/occurrence/facets?facets=species_guid";
     static final String DOWNLOAD_URL = "/occurrences/download?";
-    static final String DATA_PROVIDERS_SERVICE = "/webportal/dataProviders?";
+    static final String DATA_PROVIDERS_SERVICE = "/mapping/dataProviders?";
     static final String QUERY_TITLE_URL = "/occurrences/search?";
-    static final String LEGEND_SERVICE_CSV = "/webportal/legend?";
-    static final String BOUNDING_BOX_CSV = "/webportal/bbox?";
+    static final String LEGEND_SERVICE_CSV = "/mapping/legend?";
+    static final String BOUNDING_BOX_CSV = "/mapping/bbox?";
     static final String INDEXED_FIELDS_LIST = "/indexed/fields?";
-    static final String POST_SERVICE = "/webportal/params?";
-    static final String QID_DETAILS = "/webportal/params/details/";
+    static final String POST_SERVICE = "/mapping/params?";
+    static final String QID_DETAILS = "/mapping/params/details/";
     static final String ENDEMIC_COUNT_SERVICE = "/explore/counts/endemic?";
     static final String ENDEMIC_SPECIES_SERVICE_CSV = "/explore/endemic/species.csv?";
     static final String DEFAULT_ROWS = "pageSize=1000000";
@@ -58,7 +58,7 @@ public class BiocacheQuery implements Query, Serializable {
      */
     static final String DEFAULT_VALIDATION = "";
     static final String BIE_SPECIES = "/species/";
-    static final String WMS_URL = "/webportal/wms/reflect?";
+    static final String WMS_URL = "/mapping/wms/reflect?";
     private static final Logger LOGGER = Logger.getLogger(BiocacheQuery.class);
     private static final String[] COMMON_TAXON_RANKS = new String[]{
             "cultivar",

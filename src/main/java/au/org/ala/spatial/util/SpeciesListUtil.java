@@ -17,10 +17,7 @@ import org.springframework.stereotype.Component;
 import org.zkoss.json.JSONValue;
 
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Provides some utility methods for working with species list.
@@ -45,6 +42,42 @@ public class SpeciesListUtil {
         } else {
             return 0;
         }
+    }
+
+    /**
+     * Returns a map of data resource UIDs -> filter query string.
+     * @return
+     */
+    public static Map<String, String> getIndexedLists() {
+
+        String url = CommonData.getBiocacheServer() + "/occurrences/search?q=*:*&facets=species_list_uid&pageSize=0";
+        HttpClient client = new HttpClient();
+        GetMethod get = new GetMethod(url);
+        try {
+            int result = client.executeMethod(get);
+            if (result == 200) {
+                String rawJSON = get.getResponseBodyAsString();
+                JSONParser jp = new JSONParser();
+                JSONObject json =  (JSONObject) jp.parse(rawJSON);
+
+                Map<String, String> results = new HashMap<String, String>();
+
+                 //  "facetResults.fieldResult"
+                JSONArray lists = (JSONArray) ((JSONObject) ((JSONArray) json.get("facetResults")).get(0)).get("fieldResult");
+
+                for(Object list : lists){
+                    JSONObject listDetail = (JSONObject) list;
+                    String filterQuery = (String) listDetail.get("fq");
+                    String dataResourceUid = filterQuery.replaceAll("species_list_uid:", "").replaceAll("\"", "");
+                    results.put(dataResourceUid, filterQuery);
+                }
+
+                return results;
+            }
+        } catch (Exception e){
+            LOGGER.error("Unable to retrieve details of indexed species lists.");
+        }
+        return new HashMap<String, String>();
     }
 
     private static JSONObject getLists(String user, Integer offset, Integer max, String sort, String order, String searchTerm) {

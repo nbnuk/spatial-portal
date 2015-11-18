@@ -165,23 +165,33 @@ public class AreaMapPolygon extends AreaToolComposer {
                         try {
                             obj = (JSONObject) jp.parse(readUrl(CommonData.getLayersServer() + "/object/" + feature.get(StringConstants.PID)));
                         } catch (ParseException e) {
-                            LOGGER.error("failed to parse object: " + feature.get(StringConstants.PID));
+                            LOGGER.error("Failed to parse object metadata: " + feature.get(StringConstants.PID));
                         }
 
                         searchComplete = true;
                         displayGeom.setValue("layer: " + jo.get(StringConstants.DISPLAYNAME) + "\r\n"
                                 + "area: " + obj.get(StringConstants.NAME));
 
-                        LOGGER.debug("setting layerName from " + layerName);
-                        layerName = (mc.getMapLayer(txtLayerName.getValue()) == null) ? txtLayerName.getValue() : mc.getNextAreaLayerName(txtLayerName.getValue());
-                        LOGGER.debug("to " + layerName);
-                        MapLayer mapLayer;
+//                        layerName = (mc.getMapLayer(txtLayerName.getValue()) == null) ? txtLayerName.getValue() : mc.getNextAreaLayerName(txtLayerName.getValue());
+//                        LOGGER.debug("setting layerName from " + layerName);
+//                        LOGGER.debug("to " + layerName);
 
-                        String url = obj.get(StringConstants.WMSURL).toString();
-                        mapLayer = getMapComposer().addWMSLayer(getMapComposer().getNextAreaLayerName(txtLayerName.getValue()), txtLayerName.getValue(), url, 0.6f, /*metadata url*/ null,
-                                null, LayerUtilitiesImpl.WKT, null, null);
+                        layerName = obj.get(StringConstants.NAME).toString();
+                        txtLayerName.setValue(layerName);
 
-                        layerName = mapLayer.getName();
+
+                        MapLayer mapLayer = getMapComposer().addWMSLayer(
+                                getMapComposer().getNextAreaLayerName(txtLayerName.getValue()),
+                                txtLayerName.getValue(),
+                                obj.get(StringConstants.WMSURL).toString(),
+                                0.6f,
+                                null, /*metadata url*/
+                                null,
+                                LayerUtilitiesImpl.WKT,
+                                null,
+                                null);
+
+//                        layerName = mapLayer.getName();
 
                         //add colour!
                         int colour = Util.nextColour();
@@ -198,17 +208,10 @@ public class AreaMapPolygon extends AreaToolComposer {
 
                         mapLayer.setPolygonLayer(true);
 
-                        JSONObject objJson = null;
-                        try {
-                            objJson = (JSONObject) jp.parse(readUrl(CommonData.getLayersServer() + "/object/" + feature.get(StringConstants.PID)));
-                        } catch (ParseException e) {
-                            LOGGER.error("failed to parse for object: " + feature.get(StringConstants.PID));
-                        }
-
                         Facet facet = null;
                         //only get field data if it is an intersected layer (to exclude layers containing points)
-                        if (CommonData.getLayerByShortName((String) objJson.get(StringConstants.FID)) != null) {
-                            facet = Util.getFacetForObject(feature.get(StringConstants.VALUE), (String) objJson.get(StringConstants.FID));
+                        if (CommonData.getLayerByFID((String) obj.get(StringConstants.FID)) != null) {
+                            facet = Util.getFacetForObject(feature.get(StringConstants.VALUE), (String) obj.get(StringConstants.FID));
                         }
 
                         if (facet != null) {
@@ -224,7 +227,7 @@ public class AreaMapPolygon extends AreaToolComposer {
                         MapLayerMetadata md = mapLayer.getMapLayerMetadata();
                         String bbString = "";
                         try {
-                            bbString = objJson.get(StringConstants.BBOX).toString();
+                            bbString = obj.get(StringConstants.BBOX).toString();
                             bbString = bbString.replace(StringConstants.POLYGON + "((", "").replace("))", "").replace(",", " ");
                             String[] split = bbString.split(" ");
                             List<Double> bbox = new ArrayList<Double>();

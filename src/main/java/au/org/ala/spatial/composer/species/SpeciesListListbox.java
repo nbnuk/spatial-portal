@@ -1,5 +1,6 @@
 package au.org.ala.spatial.composer.species;
 
+import au.org.ala.legend.Facet;
 import au.org.ala.spatial.StringConstants;
 import au.org.ala.spatial.dto.SpeciesListDTO;
 import au.org.ala.spatial.dto.SpeciesListItemDTO;
@@ -16,10 +17,7 @@ import org.zkoss.zul.*;
 import org.zkoss.zul.event.ListDataEvent;
 import org.zkoss.zul.ext.Sortable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 /**
  * A reusable species list listbox.  To be used in all sections that need to reference
@@ -151,25 +149,32 @@ public class SpeciesListListbox extends Listbox {
     public BiocacheQuery extractQueryFromSelectedLists(boolean[] geospatialKosher) {
         StringBuilder sb = new StringBuilder();
         List<String> names = new ArrayList<String>();
+
+        //is this an indexed list ????
+        Map<String, String> indexedLists = SpeciesListUtil.getIndexedLists();
+        List<Facet> facets = new ArrayList<Facet>();
+
         for (String list : selectedLists) {
             //get the speciesListItems
-            Collection<SpeciesListItemDTO> items = SpeciesListUtil.getListItems(list);
-
-            for (SpeciesListItemDTO item : items) {
-                if (item.getLsid() != null) {
-                    if (sb.length() > 0) {
-                        sb.append(",");
+            if(indexedLists.containsKey(list)){
+                facets.add(new Facet("species_list_uid", list, true));
+            } else {
+                Collection<SpeciesListItemDTO> items = SpeciesListUtil.getListItems(list);
+                for (SpeciesListItemDTO item : items) {
+                    if (item.getLsid() != null) {
+                        if (sb.length() > 0) {
+                            sb.append(",");
+                        }
+                        sb.append(item.getLsid());
+                    } else {
+                        names.add(item.getName());
                     }
-                    sb.append(item.getLsid());
-                } else {
-                    names.add(item.getName());
                 }
-
             }
         }
         String[] unmatchedNames = !names.isEmpty() ? names.toArray(new String[names.size()]) : null;
         String lsids = sb.length() > 0 ? sb.toString() : null;
-        return new BiocacheQuery(lsids, unmatchedNames, null, null, null, false, geospatialKosher);
+        return new BiocacheQuery(lsids, unmatchedNames, null, null, facets, false, geospatialKosher);
     }
 
     public void onClick$btnSearchSpeciesListListbox(Event event) {
