@@ -3,7 +3,7 @@
 <zk xmlns="http://www.zkoss.org/2005/zul">
     <?variable-resolver class="org.zkoss.spring.DelegatingVariableResolver"?>
     <window id="addwmslayerwindow" apply="au.org.ala.spatial.composer.add.AddWMSLayerComposer"
-            use="au.org.ala.spatial.composer.add.AddWMSLayerComposer" width="810px" height="350px"
+            use="au.org.ala.spatial.composer.add.AddWMSLayerComposer" width="810px" height="450px"
             style="overflow:visible"
             xmlns:n="http://www.zkoss.org/2005/zk/native">
         <n:div class="fancybox-bg" id="fancybox-bg-ne" />
@@ -58,30 +58,48 @@
                     </div>
                 </div>
                 <label sclass="wCaption" value='For example:' /> 
+
+
                 <n:br />
                 <button class="btn-mini" id="useAllLink1" label="Use" />
-                <label id="linkall1" visible="false" value="http://data.auscover.org.au/geoserver/wms?request=getCapabilities" />
-                <n:a n:target="_blank" n:href="http://data.auscover.org.au/geoserver/wms?request=getCapabilities" style="display: inline">
-                    <label sclass="wCaption" value='http://data.auscover.org.au/geoserver/wms?request=getCapabilities' />
+                <label id="linkall1" visible="false" value="http://map.sepa.org.uk/ArcGIS/services/WMS_Hydrography/MapServer/WMSServer" />
+                <n:a n:target="_blank" n:href="SEPA Hydrography" style="display: inline">
+                    <label sclass="wCaption" value='SEPA Hydrography' />
                 </n:a>
+
                 <n:br />
                 <button class="btn-mini" id="useAllLink2" label="Use" />
-                <label id="linkall2" visible="false" value="http://geoserver.imos.org.au/geoserver/wms?REQUEST=GetCapabilities" />
-                <n:a n:target="_blank" n:href="http://geoserver.imos.org.au/geoserver/wms?REQUEST=GetCapabilities" style="display: inline">
-                    <label sclass="wCaption" value='http://geoserver.imos.org.au/geoserver/wms?REQUEST=GetCapabilities' />
+                <label id="linkall2" visible="false" value="http://msmap1.atkinsgeospatial.com/geoserver/nmp/wms" />
+                <n:a n:target="_blank" n:href="Marine Scotland" style="display: inline">
+                    <label sclass="wCaption" value='Marine Scotland' />
                 </n:a>
-                 <n:br />
-                  <button class="btn-mini" id="useAllLink3" label="Use" />
-                  <label id="linkall3" visible="false" value="http://www.ga.gov.au/gis/services/earth_science/GA_Surface_Geology_of_Australia/MapServer/WMSServer?request=GetCapabilities" />
-                  <n:a n:target="_blank" n:href="http://www.ga.gov.au/gis/services/earth_science/GA_Surface_Geology_of_Australia/MapServer/WMSServer?request=GetCapabilities" style="display: inline">
-                      <label sclass="wCaption" value='http://www.ga.gov.au/gis/services/earth_science/GA_Surface_Geology_of_Australia/MapServer/WMSServer?request=GetCapabilities' />
-                  </n:a>
-                    <n:br />
-                  <button class="btn-mini" id="useAllLink4" label="Use" />
-                  <label id="linkall4" visible="false" value="http://geofabric.bom.gov.au/simplefeatures/ows?request=getcapabilities" />
-                  <n:a n:target="_blank" n:href="http://geofabric.bom.gov.au/simplefeatures/ows?request=getcapabilities" style="display: inline">
-                      <label sclass="wCaption" value='http://geofabric.bom.gov.au/simplefeatures/ows?request=getcapabilities' />
-                  </n:a>
+
+
+                <!-- -->
+                <!--<n:br />-->
+                <!--<button class="btn-mini" id="useAllLink2" label="Use" />-->
+                <!--<label id="linkall2" visible="false" value="http://geoserver.imos.org.au/geoserver/wms?REQUEST=GetCapabilities" />-->
+                <!--<n:a n:target="_blank" n:href="http://geoserver.imos.org.au/geoserver/wms?REQUEST=GetCapabilities" style="display: inline">-->
+                    <!--<label sclass="wCaption" value='http://geoserver.imos.org.au/geoserver/wms?REQUEST=GetCapabilities' />-->
+                <!--</n:a>-->
+                <!-- -->
+                <!-- -->
+                <!-- -->
+                 <!--<n:br />-->
+                  <!--<button class="btn-mini" id="useAllLink3" label="Use" />-->
+                  <!--<label id="linkall3" visible="false" value="http://www.ga.gov.au/gis/services/earth_science/GA_Surface_Geology_of_Australia/MapServer/WMSServer?request=GetCapabilities" />-->
+                  <!--<n:a n:target="_blank" n:href="http://www.ga.gov.au/gis/services/earth_science/GA_Surface_Geology_of_Australia/MapServer/WMSServer?request=GetCapabilities" style="display: inline">-->
+                      <!--<label sclass="wCaption" value='http://www.ga.gov.au/gis/services/earth_science/GA_Surface_Geology_of_Australia/MapServer/WMSServer?request=GetCapabilities' />-->
+                  <!--</n:a>-->
+                <!-- -->
+                <!-- -->
+                <!-- -->
+                  <!--<n:br />-->
+                  <!--<button class="btn-mini" id="useAllLink4" label="Use" />-->
+                  <!--<label id="linkall4" visible="false" value="http://geofabric.bom.gov.au/simplefeatures/ows?request=getcapabilities" />-->
+                  <!--<n:a n:target="_blank" n:href="http://geofabric.bom.gov.au/simplefeatures/ows?request=getcapabilities" style="display: inline">-->
+                      <!--<label sclass="wCaption" value='http://geofabric.bom.gov.au/simplefeatures/ows?request=getcapabilities' />-->
+                  <!--</n:a>-->
 
 
         <!--  version -->

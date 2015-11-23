@@ -182,6 +182,9 @@ function changeBaseLayer(type) {
     } else if (type == 'hybrid') {
         map.setBaseLayer(bLayer);
         $('#sat_mapoption').addClass('mapoptsel');
+    } else if (type == 'greyscale') {
+        map.setBaseLayer(bLayer1);
+        $('#gre_mapoption').addClass('mapoptsel');
     } else if (type == 'minimal') {
         map.setBaseLayer(bLayer3);
         $('#min_mapoption').addClass('mapoptsel');

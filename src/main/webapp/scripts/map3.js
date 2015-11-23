@@ -106,8 +106,6 @@ function loadEnd() {
     if (layersLoading == 0) {
         toggleLoadingImage("none");
     }
-//signal webportal
-
 }
 
 function toggleLoadingImage(display) {
@@ -154,7 +152,7 @@ function checkLibraryLoaded() {
 
 }
 
-var bLayer, bLayer2, bLayer3, bLayer4;
+var bLayer, bLayer1, bLayer2, bLayer3, bLayer4;
 
 function goToLocation(lon, lat, zoom) {
     // Google.v3 uses EPSG:900913 as projection, so we have to
@@ -168,13 +166,15 @@ function goToLocation(lon, lat, zoom) {
 
 function changeBaseLayer(type) {
     if (type == 'normal') {
-        map.setBaseLayer(bLayer2);
+        map.setBaseLayer(bLayer);
     } else if (type == 'hybrid') {
         map.setBaseLayer(bLayer);
     } else if (type == 'minimal') {
         map.setBaseLayer(bLayer3);
     } else if (type == 'outline') {
         map.setBaseLayer(bLayer4);
+    } else if (type == 'greyscale') {
+        map.setBaseLayer(bLayer1);
     }
 }
 
@@ -257,6 +257,7 @@ function buildMapReal(west, south, east, north) {
             wrapDateLine: false,
             'sphericalMercator': true
         });
+    bLayer1 = new OpenLayers.Layer.XYZ('MapBox', 'http://a.tiles.mapbox.com/v3/nickdos.kf2g7gpb/${z}/${x}/${y}.png');
     bLayer2 = new OpenLayers.Layer.Google("Google Streets",
         {
             wrapDateLine: false,
@@ -275,8 +276,9 @@ function buildMapReal(west, south, east, north) {
             'sphericalMercator': true
         }
     );
-    map.addLayers([bLayer2, bLayer, bLayer3, bLayer4]);
+    map.addLayers([bLayer2, bLayer1, bLayer, bLayer3, bLayer4]);
     parent.bLayer = bLayer;
+    parent.bLayer1 = bLayer1;
     parent.bLayer2 = bLayer2;
     parent.bLayer3 = bLayer3;
     parent.bLayer4 = bLayer4;
@@ -388,7 +390,6 @@ function iterateSpeciesInfoQuery(curr) {
             var infohtml = "<div id='sppopup2'> " +
                 heading + "Record id: " + ulyr_occ_id + "<br /> " + data + " <br /> <br />" +
                 " Longitude: " + ulyr_occ_lng + " , Latitude: " + ulyr_occ_lat + " (<a href='javascript:goToLocation(" + ulyr_occ_lng + ", " + ulyr_occ_lat + ", 15);relocatePopup(" + ulyr_occ_lng + ", " + ulyr_occ_lat + ");'>zoom to</a>) <br/>" +
-                //" <input type='checkbox' checked='parent.isFlaggedRecord(\"" + ulyr + "\",\"" + ulyr_occ_id + "\")' onClick='parent.flagRecord(\"" + ulyr + "\",\"" + ulyr_occ_id + "\",this.checked)' />Assign record to <i>ad hoc</i> group<br/>" +
                 "<div id=''>" + prevBtn + " &nbsp; &nbsp; &nbsp; &nbsp; " + nextBtn + "</div>";
 
             setTimeout(function () {
