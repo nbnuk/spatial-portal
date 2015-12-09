@@ -4,6 +4,7 @@ import au.com.bytecode.opencsv.CSVReader;
 import au.org.ala.legend.Facet;
 import au.org.ala.legend.LegendObject;
 import au.org.ala.spatial.StringConstants;
+import au.org.ala.spatial.composer.sandbox.SandboxEmbeddedController;
 import au.org.ala.spatial.composer.sandbox.SandboxPasteController;
 import au.org.ala.spatial.composer.species.SpeciesAutoCompleteComponent;
 import au.org.ala.spatial.dto.ScatterplotDataDTO;
@@ -35,14 +36,14 @@ import com.thoughtworks.xstream.mapper.MapperWrapper;
 import com.thoughtworks.xstream.persistence.FilePersistenceStrategy;
 import com.thoughtworks.xstream.persistence.PersistenceStrategy;
 import com.thoughtworks.xstream.persistence.XmlArrayList;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.io.WKTReader;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.zkoss.xel.VariableResolver;
-import org.zkoss.xel.XelException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -76,14 +77,13 @@ import java.util.regex.Pattern;
  *
  * @author geoff
  */
-public class MapComposer extends GenericAutowireAutoforwardComposer implements VariableResolver {
+public class MapComposer extends GenericAutowireAutoforwardComposer {
 
     public static final int DEFAULT_POINT_SIZE = 3;
     public static final float DEFAULT_POINT_OPACITY = 0.6f;
     private static final Logger LOGGER = Logger.getLogger(MapComposer.class);
     private static final long serialVersionUID = 1L;
 
-    private String applicationTitle = "Test";
     private String featuresCSV;
     private MapLayer llc2MapLayer;
     private Query downloadSecondQuery = null;
@@ -94,7 +94,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
     private int mapZoomLevel = 4;
     private Map activeLayerMapProperties;
     private Label lblSelectedLayer;
-    private String useSpeciesWMSCache = "off";
+    private String useSpeciesWMSCache = "on";
     private List<LayerSelection> selectedLayers = new ArrayList<LayerSelection>();
     /*
      * for capturing layer loaded events signaling listeners
@@ -129,8 +129,6 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
     private PortalSessionUtilities portalSessionUtilities = null;
     private Settings settings = null;
     private Pattern layerNameParamPattern = Pattern.compile("ly\\.[0-9]{1,}");
-
-    public String getApplicationTitle(){ return applicationTitle; }
 
     public void onClick$removeAllLayers() {
         if (safeToPerformMapAction()) {
@@ -311,8 +309,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
             String rank = details[1];
             Query query = sacc.getQuery((Map) getSession().getAttribute(StringConstants.USERPOINTS), false, geospatialKosher);
             Query q = QueryUtil.queryFromSelectedArea(query, sa, false, geospatialKosher);
-            String wkt = sa == null ? null : sa.getWkt();
-            mapSpecies(q, taxon, rank, 0, LayerUtilitiesImpl.SPECIES, wkt, -1, DEFAULT_POINT_SIZE, DEFAULT_POINT_OPACITY, Util.nextColour(), mapExpertDistributions);
+            mapSpecies(q, taxon, rank, 0, LayerUtilitiesImpl.SPECIES, null, -1, DEFAULT_POINT_SIZE, DEFAULT_POINT_OPACITY, Util.nextColour(), mapExpertDistributions);
             LOGGER.debug(">>>>> " + taxon + ", " + rank + " <<<<<");
         }
     }
@@ -837,9 +834,11 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
      * Adds a object as a layer to the map.
      *
      * @param pid
+     * @param displayName
+     * @param radiusKm for use when the pid refers to a point not a polygon
+     * @return
      */
-    public MapLayer addObjectByPid(String pid, String displayName) {
-        LOGGER.debug("Loading object with: " + CommonData.getLayersServer() + "/object/" + pid);
+    public MapLayer addObjectByPid(String pid, String displayName, double radiusKm) {
         JSONParser jp = new JSONParser();
 
         JSONObject obj = null;
@@ -865,13 +864,8 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
         MapLayerMetadata md = mapLayer.getMapLayerMetadata();
 
         Facet facet = null;
-        if (CommonData.getLayerByShortName(fid) != null && CommonData.getFacetLayerNameDefault(fid) != null) {
-            JSONObject field = null;
-            try {
-                field = (JSONObject) jp.parse(Util.readUrl(CommonData.getLayersServer() + "/field/" + fid + "?pageSize=0"));
-            } catch (ParseException e) {
-                LOGGER.error("failed to parse for field: " + fid);
-            }
+        if (CommonData.getLayer(fid) != null && CommonData.getFacetLayerNameDefault(fid) != null) {
+            JSONObject field = CommonData.getLayer(fid);
 
             if (field.containsKey("indb") && StringConstants.TRUE.equalsIgnoreCase(field.get("indb").toString())) {
                 String spid = field.get("spid").toString();
@@ -882,18 +876,41 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
         }
 
         try {
-            List<Double> dbb = Util.getBoundingBox(bbox);
+            List<Double> dbb = Util.getBoundingBox(obj.get(StringConstants.BBOX).toString());
+
+            //if the layer is a point create a radius
+            boolean point = false;
+            if (dbb.get(0).floatValue() == dbb.get(2).floatValue() && (float) dbb.get(1).floatValue() == dbb.get(3).floatValue()) {
+                point = true;
+
+                mapLayer.setWKT("POINT(" + dbb.get(0).floatValue() + " " + dbb.get(1).floatValue() + ")");
+
+                double radius = radiusKm * 1000.0;
+
+                String wkt = Util.createCircleJs(dbb.get(0).floatValue(), dbb.get(1).floatValue(), radius);
+                getMapComposer().removeLayer(displayName);
+                mapLayer = getMapComposer().addWKTLayer(wkt, displayName, displayName);
+
+                //redo bounding box
+                dbb = Util.getBoundingBox(wkt);
+            }
+            
             md.setBbox(dbb);
+
+            mapLayer.setAreaSqKm(obj.get(StringConstants.AREA_KM).toString());
         } catch (Exception e) {
             LOGGER.debug("failed to parse: " + bbox, e);
         }
-
 
         if (facet != null) {
             List<Facet> facets = new ArrayList<Facet>();
             facets.add(facet);
             mapLayer.setFacets(facets);
-            mapLayer.setWKT(Util.readUrl(CommonData.getLayersServer() + "/shape/wkt/" + pid));
+
+            //do not set WKT for grids as shapefiles
+            if (!((JSONObject) CommonData.getLayer(fid).get("layer")).get("path_orig").toString().contains("diva")) {
+                mapLayer.setWktUrl(CommonData.getLayersServer() + "/shape/wkt/" + pid);
+            }
         } else {
             //not in biocache, so add as WKT
             mapLayer.setWKT(Util.readUrl(CommonData.getLayersServer() + "/shape/wkt/" + pid));
@@ -947,9 +964,11 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
                 mapLayer.setCql(cqlfilter);
                 mapLayer.setEnvParams(envParams);
 
+                String fieldId = mapLayer.getUri().replaceAll("^.*&style=", "").replaceAll("&.*", "").replaceAll("_style", "");
+
                 String newUri = CommonData.getGeoServer()
                         + "/wms?REQUEST=GetLegendGraphic&VERSION=1.0.0&FORMAT=image/png&WIDTH=20&HEIGHT=9&LAYER="
-                        + mapLayer.getLayer();
+                        + mapLayer.getLayer() + (fieldId.length() < 10 ? "&styles=" + fieldId + "_style" : "");
                 mapLayer.setDefaultStyleLegendUri(newUri);
 
                 if (metadata != null && metadata.startsWith("http")) {
@@ -1251,15 +1270,18 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
             for (String s : layers) {
                 JSONArray layerlist = CommonData.getLayerListJSONArray();
                 for (int j = 0; j < layerlist.size(); j++) {
-                    JSONObject jo = (JSONObject) layerlist.get(j);
-                    String name = jo.get(StringConstants.NAME).toString();
+                    JSONObject field = (JSONObject) layerlist.get(j);
+                    JSONObject layer = (JSONObject) field.get("layer");
+                    String name = field.get(StringConstants.ID).toString();
                     if (name.equalsIgnoreCase(s)) {
-                        String uid = jo.get(StringConstants.ID).toString();
-                        String type = jo.get(StringConstants.TYPE).toString();
-                        String treeName = StringUtils.capitalize(jo.get(StringConstants.DISPLAYNAME).toString());
-                        String treePath = jo.get("displaypath").toString();
+                        String fieldId = field.get(StringConstants.ID).toString();
+                        String uid = layer.get(StringConstants.ID).toString();
+                        String type = layer.get(StringConstants.TYPE).toString();
+                        String treeName = StringUtils.capitalize(field.get(StringConstants.NAME).toString());
+                        String treePath = layer.get("displaypath").toString();
                         String legendurl = CommonData.getGeoServer()
-                                + "/wms?REQUEST=GetLegendGraphic&VERSION=1.0.0&FORMAT=image/png&WIDTH=20&HEIGHT=9&LAYER=" + s;
+                                + "/wms?REQUEST=GetLegendGraphic&VERSION=1.0.0&FORMAT=image/png&WIDTH=20&HEIGHT=9&LAYER=" + s
+                                + (fieldId.length() < 10 ? "&styles=" + fieldId + "_style" : "");
                         String metadata = CommonData.getLayersServer() + "/layers/view/more/" + uid;
                         getMapComposer().addWMSLayer(s, treeName, treePath, (float) 0.75, metadata, legendurl,
                                 StringConstants.ENVIRONMENTAL.equalsIgnoreCase(type) ?
@@ -1289,7 +1311,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
             }
             for (String pid : pids) {
                 if (names.get("PID:" + pid) == null) {
-                    MapLayer mapLayer = getMapComposer().addObjectByPid(pid, null);
+                    MapLayer mapLayer = getMapComposer().addObjectByPid(pid, null, 1);
                     if (pids.length == 1) {
                         //zoom to this region
                         getMapComposer().zoomToExtent(mapLayer);
@@ -1352,6 +1374,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
             boolean[] geospatialKosher = null;
             boolean supportDynamic = false;
             String qname = null;
+            Boolean includeDistributions = true;
 
             for (int i = 0; i < userParams.size(); i++) {
                 String key = userParams.get(i).getKey();
@@ -1422,6 +1445,11 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
                     supportDynamic = Boolean.parseBoolean(value);
                 } else if ("cm".equals(key)) {
                     colourBy = value.trim();
+                } else if ("includeDistributions".equals(key)) {
+                    try {
+                        includeDistributions = Boolean.parseBoolean(value.trim());
+                    } catch (Exception e) {
+                    }
                 }
             }
 
@@ -1468,7 +1496,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
                         setGrid = 0;
                     }
                     mapLayer = mapSpecies(q, qname != null ? qname : q.getSolrName(), StringConstants.SPECIES, q.getOccurrenceCount()
-                            , LayerUtilitiesImpl.SPECIES, null, setGrid, size, opacity, colour, colourBy, true);
+                            , LayerUtilitiesImpl.SPECIES, null, setGrid, size, opacity, colour, colourBy, includeDistributions);
                 }
             }
 
@@ -1861,7 +1889,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
                     //map this layer with its recorded scientific name
                     try {
                         JSONObject jo = ((JSONObject) jp.parse(Util.readUrl(CommonData.getLayersServer()
-                                + "/distribution/" + spcode[i])));
+                                + "/distribution/" + spcode[i] + "?nowkt=true")));
                         String scientific = jo.get(StringConstants.SCIENTIFIC).toString();
                         String distributionAreaName = jo.get("area_name").toString();
                         String layerName = getNextAreaLayerName(scientific);
@@ -1899,7 +1927,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
                         if (getMapLayerWMS(wmsNames[i]) == null) {
 
                             String scientific = ((JSONObject) jp.parse(Util.readUrl(CommonData.getLayersServer()
-                                    + "/distribution/" + spcode[i]))).get(StringConstants.SCIENTIFIC).toString();
+                                    + "/distribution/" + spcode[i] + "?nowkt=true"))).get(StringConstants.SCIENTIFIC).toString();
                             String layerName = getNextAreaLayerName(scientific + " area " + (i + 1));
                             String html = Util.getMetadataHtmlForDistributionOrChecklist(spcode[i], null, layerName);
                             ml = addWMSLayer(layerName, getNextAreaLayerName("Expert distribution: " + scientific)
@@ -2060,7 +2088,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
                         + jo.containsKey(StringConstants.PID)));
 
                 //only get field data if it is an intersected layer (to exclude layers containing points)
-                if (CommonData.getLayerByShortName((String) object.get(StringConstants.FID)) != null) {
+                if (CommonData.getLayer((String) object.get(StringConstants.FID)) != null) {
                     facet = Util.getFacetForObject(jo.get(StringConstants.AREA_NAME).toString()
                             , (String) object.get(StringConstants.FID));
                 }
@@ -2105,13 +2133,27 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
 
     public void warnForLargeWKT(MapLayer ml) {
         //display warning for large wkt that does not have a facet
-        if (ml.getFacets() == null
-                && ml.getWKT().length() > Integer.parseInt(CommonData.getSettings().getProperty("max_q_wkt_length"))) {
-            WKTReducedDTO reduced = Util.reduceWKT(ml.getWKT());
-            ml.setWKT(reduced.getReducedWKT());
-            getMapComposer().showMessage("WARNING: The polygon displayed has reduced resolution to enable " +
-                    "subsequent analyses.\r\n"
-                    + reduced.getReducedBy());
+        if (ml.getFacets() == null) {
+            WKTReader wktReader = new WKTReader();
+
+            try {
+                Geometry g = wktReader.read(ml.getWKT());
+
+                if (g.getNumPoints() > Integer.parseInt(CommonData.getSettings().getProperty("max_q_wkt_points", "200"))) {
+
+                    WKTReducedDTO reduced = Util.reduceWKT(ml.getWKT());
+                    ml.setWKT(reduced.getReducedWKT());
+
+                    Geometry gsimplified = wktReader.read(ml.getWKT());
+
+                    getMapComposer().showMessage("WARNING: The polygon has more than the maximum number of points and has been simplified, " +
+                            "\r\n\r\noriginal points: " + g.getNumPoints() +
+                            "\r\nmax points: " + CommonData.getSettings().getProperty("max_q_wkt_points", "200") +
+                            "\r\nsimplified points: " + gsimplified.getNumPoints());
+                }
+            } catch (Exception e) {
+                LOGGER.error("error testing and reducing WKT", e);
+            }
         }
     }
 
@@ -2539,6 +2581,10 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
 
     public void onClick$btnAreaReport(Event event) {
         openModal("WEB-INF/zul/tool/AreaReport.zul", null, StringConstants.ADDTOOLWINDOW);
+    }
+
+    public void onClick$btnInOut(Event event) {
+        openModal("WEB-INF/zul/tool/InOut.zul", null, StringConstants.ADDTOOLWINDOW);
     }
 
     public void onClick$btnAreaReportPDF(Event event) {
@@ -2995,10 +3041,18 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
             } else {
                 if (StringUtils.isNotEmpty((String) CommonData.getSettings().getProperty("sandbox.url", null))
                         && CommonData.getSettings().getProperty("import.points.layers-service", "false").equals("false")) {
-                    SandboxPasteController spc = (SandboxPasteController) Executions.createComponents("WEB-INF/zul/sandbox/SandboxPaste.zul", getMapComposer(), null);
-                    spc.setAddToMap(true);
-                    spc.setParent(getMapComposer());
-                    spc.doModal();
+                    String sandboxEmbedded = CommonData.getSettings().getProperty("sandbox.embedded", "false");
+                    if (sandboxEmbedded != null && Boolean.parseBoolean(sandboxEmbedded)) {
+                        SandboxEmbeddedController spc = (SandboxEmbeddedController) Executions.createComponents("WEB-INF/zul/sandbox/SandboxEmbedded.zul", getMapComposer(), null);
+                        spc.setAddToMap(true);
+                        spc.setParent(getMapComposer());
+                        spc.doModal();
+                    } else {
+                        SandboxPasteController spc = (SandboxPasteController) Executions.createComponents("WEB-INF/zul/sandbox/SandboxPaste.zul", getMapComposer(), null);
+                        spc.setAddToMap(true);
+                        spc.setParent(getMapComposer());
+                        spc.doModal();
+                    }
                 } else {
                     Map params = new HashMap();
                     params.put("setTbInstructions", "3. Select file (comma separated ID (text), " +
@@ -3266,7 +3320,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
             deactiveLayer(ml, true, false);
 
             //1. create new layer
-            MapLayer newml = addObjectByPid(pid, ml.getDisplayName());
+            MapLayer newml = addObjectByPid(pid, ml.getDisplayName(), 1);
             newml.setMapLayerMetadata(ml.getMapLayerMetadata());
             newml.setAreaSqKm(ml.getAreaSqKm());
             newml.setUserDefinedLayer(ml.isUserDefinedLayer());
@@ -3297,10 +3351,5 @@ public class MapComposer extends GenericAutowireAutoforwardComposer implements V
 
     public void setDownloadSecondLayers(String[] downloadSecondLayers) {
         this.downloadSecondLayers = downloadSecondLayers == null ? null : downloadSecondLayers.clone();
-    }
-
-    @Override
-    public Object resolveVariable(String s) throws XelException {
-        return "My Application Title";
     }
 }

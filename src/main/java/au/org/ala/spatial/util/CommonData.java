@@ -19,6 +19,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -43,8 +44,8 @@ public final class CommonData {
     //common data
     public static final String WORLD_WKT = "POLYGON((-179.999 -89.999,-179.999 89.999,179.999 84.999,179.999 -89.999,-179.999 -89.999))";
     //NC: 20130319 changed to using the correct direction
-    public static final String SPECIFIC_REGION_WKT = "default.wkt";
-    public static final String SPECIFIC_REGION_NAME = "default.name";
+    public static final String AUSTRALIA_WKT = "default.wkt";
+    public static final String AUSTRALIA_NAME = "default.name";
     public static final String PHYLOLIST_URL = "phylolist_url";
     //common parameters
     private static final String SAT_URL = "sat_url";
@@ -64,7 +65,6 @@ public final class CommonData {
     private static final String MAX_AREA_FOR_ENDEMIC = "max_area_endemic";
     private static final String EXTRA_DOWNLOAD_FIELDS = "occurrence_extra_download";
     private static final String DISPLAY_POINTS_OF_INTEREST = "display_points_of_interest";
-    private static final String AUTOCOMPLETE_COUNTS_ENABLED = "auto_complete_counts_enabled";
     private static final String CUSTOM_FACETS = "custom_facets";
     private static final String AREA_REPORT_FACETS = "area_report_facets";
     //NC 20131017 - the default facets supplied by the biocache WS that are ignored.
@@ -103,7 +103,7 @@ public final class CommonData {
     private static List<String> i18nIgnoredPrefixes;
     //(2) for EnvironmentalList
     private static JSONObject distances;
-    private static Map<String, Map<String, Double>> distancesMap = new HashMap<String, Map<String,Double>>();
+    private static Map<String, Map<String, Double>> distancesMap;
     private static JSONObject copyDistances;
     private static Map<String, Map<String, Double>> copyDistancesMap;
     //(3) for layer list json
@@ -132,10 +132,6 @@ public final class CommonData {
     // download reasons
     private static JSONArray downloadReasons;
     private static JSONArray copyDownloadReasons;
-    private static Map<String, JSONObject> layerToFacet;
-    private static Map<String, JSONObject> facetToLayer;
-    private static Map<String, JSONObject> layerToFacetDefault;
-    private static Map<String, JSONObject> facetToLayerDefault;
     private static Properties i18nProperites = null;
     private static LanguagePack languagePack = null;
     private static Map speciesListCounts;
@@ -143,6 +139,9 @@ public final class CommonData {
     private static Map speciesListCountsKosher;
     private static Long speciesListCountsUpdatedKosher = 0L;
     private static Map<String, Map<String, List<String>>> speciesListAdditionalColumns = new HashMap<String, Map<String, List<String>>>();
+
+    private static final String FACET_SUFFIX = "/search/grouped/facets";
+    private static List<QueryField> facetQueryFieldList;
 
     private CommonData() {
         //to hide public constructor
@@ -152,6 +151,12 @@ public final class CommonData {
      * initialize common data from geoserver and satserver
      */
     public static void init(Properties settings) {
+        //first time, load from disk cache
+        boolean readFromCache = false;
+        if (CommonData.settings == null) {
+            readFromCache = loadFromCache();
+        }
+
         CommonData.settings = settings;
 
         //Common
@@ -159,8 +164,8 @@ public final class CommonData {
         geoServer = settings.getProperty(GEOSERVER_URL);
         layersServer = settings.getProperty(LAYERS_URL);
         webportalServer = settings.getProperty(WEBPORTAL_URL);
-        bieServer = settings.getProperty(BIE_SERVICE_URL, "http://bie.ala.org.au/ws");
-        bieWebServer = settings.getProperty(BIE_WEBAPP_URL, "http://bie.ala.org.au");
+        bieServer = settings.getProperty(BIE_SERVICE_URL);
+        bieWebServer = settings.getProperty(BIE_WEBAPP_URL);
         biocacheServer = settings.getProperty(BIOCACHE_SERVICE_URL);
         biocacheWebServer = settings.getProperty(BIOCACHE_WEBAPP_URL);
         speciesListServer = settings.getProperty(SPECIES_LIST_URL);
@@ -183,7 +188,6 @@ public final class CommonData {
         }
 
         displayPointsOfInterest = settings.containsKey(DISPLAY_POINTS_OF_INTEREST) && Boolean.parseBoolean(settings.getProperty(DISPLAY_POINTS_OF_INTEREST));
-        autoCompleteCountsEnabled = settings.containsKey(AUTOCOMPLETE_COUNTS_ENABLED) && Boolean.parseBoolean(settings.getProperty(AUTOCOMPLETE_COUNTS_ENABLED));
 
         i18nURL = settings.getProperty(I18N_URL);
         String tmp = settings.getProperty(I18N_IGNORE_THESE_PREFIXES);
@@ -193,10 +197,18 @@ public final class CommonData {
             i18nIgnoredPrefixes = new ArrayList<String>();
         }
 
+        //init language pack (but not everywhere)
+        initLanguagePack();
+
+        setupAnalysisLayerSets();
+
         //journalmap
         initJournalmap();
 
-        setupAnalysisLayerSets();
+        if (!readFromCache) refreshCachedData();
+    }
+
+    private static void refreshCachedData() {
 
         initLayerDistances();
 
@@ -207,10 +219,7 @@ public final class CommonData {
         initSpeciesWMSLayers();
 
         //(5) for layer to facet name mapping
-        readLayerInfo();
-
-        //(6) for common facet name and value conversions
-        initI18nProperies();
+        //readLayerInfo();
 
         //(7) lsid counts
         //LsidCounts lc = new LsidCounts();
@@ -231,13 +240,13 @@ public final class CommonData {
         //keep a list of biocache field names to know what is available for queries
         initBiocacheLayerList();
 
-        //init language pack (but not everywhere)
-        initLanguagePack();
-
         //need this data if using SP's endemic method
         if (CommonData.getSettings().containsKey("endemic.sp.method")
                 && CommonData.getSettings().getProperty("endemic.sp.method").equals("true")) {
+            getSpeciesListCountsKosher(true);
+            getSpeciesListCounts(true);
         }
+
 
         //(2) for EnvironmentalList
         if (copyDistances != null) {
@@ -278,6 +287,83 @@ public final class CommonData {
         if (copyChecklistspeciesWmsLayersBySpcode != null) {
             checklistspeciesWmsLayersBySpcode = copyChecklistspeciesWmsLayersBySpcode;
         }
+
+        //(6) for common facet name and value conversions, layers need to be initialised before here
+        initI18nProperies();
+
+        writeToCache();
+
+    }
+
+    private static void writeToCache() {
+        try {
+            String path = "/data/webportal/cache/";
+
+            new File(path).mkdirs();
+
+            ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(path + "commondata"));
+
+            oos.writeObject(speciesListAdditionalColumns);
+            oos.writeObject(downloadReasons);
+            oos.writeObject(biocacheLayerList);
+            oos.writeObject(speciesListCountsKosher);
+            oos.writeObject(speciesListCounts);
+            oos.writeObject(speciesWmsLayers);
+            oos.writeObject(distancesMap);
+            oos.writeObject(distances);
+            oos.writeObject(layerlistJSON);
+            oos.writeObject(speciesWmsLayers);
+            oos.writeObject(speciesMetadataLayers);
+            oos.writeObject(speciesSpcodeLayers);
+            oos.writeObject(checklistspeciesWmsLayers);
+            oos.writeObject(checklistspeciesMetadataLayers);
+            oos.writeObject(checklistspeciesSpcodeLayers);
+            oos.writeObject(checklistspeciesWmsLayersBySpcode);
+            oos.writeObject(i18nProperites);
+            oos.writeObject(facetQueryFieldList);
+
+            oos.close();
+
+        } catch (Exception e) {
+            LOGGER.error("cannot write common data to cache", e);
+        }
+    }
+
+    private static boolean loadFromCache() {
+        try {
+            String path = "/data/webportal/cache/";
+
+            if (!new File(path + "commondata").exists()) return false;
+
+            ObjectInputStream oos = new ObjectInputStream(new FileInputStream(path + "commondata"));
+
+            speciesListAdditionalColumns = (Map<String, Map<String, List<String>>>) oos.readObject();
+            downloadReasons = (JSONArray) oos.readObject();
+            biocacheLayerList = (Set<String>) oos.readObject();
+            speciesListCountsKosher = (Map<String, JSONObject>) oos.readObject();
+            speciesListCounts = (Map<String, JSONObject>) oos.readObject();
+            speciesWmsLayers = (Map<String, String[]>) oos.readObject();
+            distancesMap = (Map<String, Map<String, Double>>) oos.readObject();
+            distances = (JSONObject) oos.readObject();
+            layerlistJSON = (JSONArray) oos.readObject();
+            speciesWmsLayers = (Map<String, String[]>) oos.readObject();
+            speciesMetadataLayers = (Map<String, String[]>) oos.readObject();
+            speciesSpcodeLayers = (Map<String, String[]>) oos.readObject();
+            checklistspeciesWmsLayers = (Map<String, String[]>) oos.readObject();
+            checklistspeciesMetadataLayers = (Map<String, String[]>) oos.readObject();
+            checklistspeciesSpcodeLayers = (Map<String, String[]>) oos.readObject();
+            checklistspeciesWmsLayersBySpcode = (Map<String, String[]>) oos.readObject();
+            i18nProperites = (Properties) oos.readObject();
+            facetQueryFieldList = (List<QueryField>) oos.readObject();
+
+            oos.close();
+
+        } catch (Exception e) {
+            LOGGER.error("cannot read common data from cache", e);
+            return false;
+        }
+
+        return true;
     }
 
     public static JSONArray getDownloadReasons() {
@@ -340,7 +426,7 @@ public final class CommonData {
 
     static void initLayerList() {
         copyLayerlistJSON = null;
-        String layersListURL = layersServer + "/layers";
+        String layersListURL = layersServer + "/fields/search?q=";
         try {
 
             HttpClient client = new HttpClient();
@@ -354,41 +440,10 @@ public final class CommonData {
                 copyLayerlistJSON = (JSONArray) jp.parse(get.getResponseBodyAsString());
             }
 
-            addFieldsToLayers(copyLayerlistJSON);
+            //addFieldsToLayers(copyLayerlistJSON);
         } catch (Exception e) {
             LOGGER.error("error getting layers list: " + layersListURL, e);
             copyLayerlistJSON = null;
-        }
-    }
-
-    static void addFieldsToLayers(JSONArray joLayers) throws Exception {
-        //get field id with classes
-        String fieldsURL = layersServer + "/fields";
-        HttpClient client = new HttpClient();
-        GetMethod get = new GetMethod(fieldsURL);
-        int result = client.executeMethod(get);
-        if (result != 200) {
-            LOGGER.error("cannot retrieve field list: " + fieldsURL);
-            return;
-        }
-        String fields = get.getResponseBodyAsString();
-        JSONParser jp = new JSONParser();
-        JSONArray ja = (JSONArray) jp.parse(fields);
-
-        //attach to a new JSONArray in joLayers named Constants.FIELDS
-        for (int j = 0; j < joLayers.size(); j++) {
-            JSONObject layer = (JSONObject) joLayers.get(j);
-            if (layer.containsKey(StringConstants.ID)) {
-                for (int i = 0; i < ja.size(); i++) {
-                    JSONObject jo = (JSONObject) ja.get(i);
-                    if (jo.containsKey("spid") && jo.get("spid").toString().equals(layer.get(StringConstants.ID).toString())) {
-                        if (!layer.containsKey(StringConstants.FIELDS)) {
-                            layer.put(StringConstants.FIELDS, new JSONArray());
-                        }
-                        ((JSONArray) layer.get(StringConstants.FIELDS)).add(jo);
-                    }
-                }
-            }
         }
     }
 
@@ -705,19 +760,12 @@ public final class CommonData {
     }
 
     public static String getLayerFacetName(String layer) {
-        String facetName = layer;
-        JSONObject f = layerToFacet.get(layer.toLowerCase());
-        if (f != null) {
-            facetName = f.get(StringConstants.ID).toString();
-        } else {
-            facetName = getLayerFacetNameDefault(layer);
-        }
-        return facetName;
+        return getLayer(layer) == null ? getLayerFacetNameDefault(layer) : getLayer(layer).get(StringConstants.ID).toString();
     }
 
     public static String getLayerFacetNameDefault(String layer) {
         String facetName = layer;
-        JSONObject f = layerToFacetDefault.get(layer.toLowerCase());
+        JSONObject f = getLayer(layer);
         if (f != null) {
             facetName = f.get(StringConstants.ID).toString();
         }
@@ -725,95 +773,35 @@ public final class CommonData {
     }
 
     public static String getFacetLayerName(String facet) {
-        JSONObject jo = facetToLayer.get(facet);
-        if (jo != null) {
-            return jo.get(StringConstants.NAME).toString();
-        } else {
-            return getFacetLayerNameDefault(facet);
-        }
+        return getFacetLayerNameDefault(facet);
     }
 
     public static String getFacetLayerNameDefault(String facet) {
-        JSONObject jo = facetToLayerDefault.get(facet);
-        if (jo != null) {
-            return jo.get(StringConstants.NAME).toString();
-        } else {
-            return null;
-        }
+        return getLayer(facet) == null ? null : facet;
     }
 
     public static String getFacetLayerDisplayName(String facet) {
-        JSONObject layer = facetToLayer.get(facet);
-        if (layer != null && layer.containsKey(StringConstants.DISPLAYNAME)) {
-            return layer.get(StringConstants.DISPLAYNAME).toString();
+        JSONObject field = getLayer(facet);
+        if (field != null) {
+            return field.get(StringConstants.NAME).toString();
         }
         return getFacetLayerDisplayNameDefault(facet);
     }
 
     public static String getFacetLayerDisplayNameDefault(String facet) {
-        JSONObject layer = facetToLayerDefault.get(facet);
-        if (layer != null && layer.containsKey(StringConstants.DISPLAYNAME)) {
-            return layer.get(StringConstants.DISPLAYNAME).toString();
+        JSONObject field = getLayer(facet);
+        if (field != null) {
+            return field.get(StringConstants.NAME).toString();
         }
         return null;
     }
 
     public static String getLayerDisplayName(String name) {
-        JSONObject layer;
-        for (int i = 0; i < layerlistJSON.size(); i++) {
-            layer = (JSONObject) layerlistJSON.get(i);
-            if (layer.get(StringConstants.NAME).toString().equalsIgnoreCase(name) && layer.containsKey(StringConstants.DISPLAYNAME)) {
-                return layer.get(StringConstants.DISPLAYNAME).toString();
-            }
+        JSONObject field = getLayer(name);
+        if (field != null) {
+            return field.get(StringConstants.NAME).toString();
         }
         return null;
-    }
-
-    private static void readLayerInfo() {
-        try {
-            Map<String, JSONObject> ftl = new HashMap<String, JSONObject>();
-            Map<String, JSONObject> ltf = new HashMap<String, JSONObject>();
-            Map<String, JSONObject> ftldefault = new HashMap<String, JSONObject>();
-            Map<String, JSONObject> ltfdefault = new HashMap<String, JSONObject>();
-
-            if (copyLayerlistJSON != null) {
-                for (int i = 0; i < copyLayerlistJSON.size(); i++) {
-                    JSONObject jo = (JSONObject) copyLayerlistJSON.get(i);
-
-                    if (jo.containsKey(StringConstants.FIELDS)) {
-                        JSONArray ja = (JSONArray) jo.get(StringConstants.FIELDS);
-                        for (int j = 0; j < ja.size(); j++) {
-                            JSONObject f = (JSONObject) ja.get(j);
-                            if (f.containsKey("indb") && f.get("indb").toString().equalsIgnoreCase("true")) {
-                                LOGGER.debug("adding indb: " + jo.get(StringConstants.NAME) + ", " + f.get(StringConstants.ID));
-                                String layer = jo.get(StringConstants.NAME).toString();
-                                String facet = f.get(StringConstants.ID).toString();
-
-                                ltf.put(layer.toLowerCase(), f);
-                                ftl.put(facet, jo);
-                            }
-                            if (f.containsKey("defaultlayer") && f.get("defaultlayer").toString().equalsIgnoreCase("true")) {
-                                LOGGER.debug("adding defaultlayer: " + jo.get(StringConstants.NAME) + ", " + f.get(StringConstants.ID));
-                                String layer = jo.get(StringConstants.NAME).toString();
-                                String facet = f.get(StringConstants.ID).toString();
-
-                                ltfdefault.put(layer.toLowerCase(), f);
-                                ftldefault.put(facet, jo);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (layerToFacet == null || !ltf.isEmpty()) {
-                layerToFacet = ltf;
-                facetToLayer = ftl;
-                layerToFacetDefault = ltfdefault;
-                facetToLayerDefault = ftldefault;
-            }
-        } catch (Exception e) {
-            LOGGER.error("error reading layer info", e);
-        }
     }
 
     public static List<QueryField> getDefaultUploadSamplingFields() {
@@ -833,22 +821,25 @@ public final class CommonData {
             p.load(new URL(i18nURL).openStream());
 
             //append facet.{fieldId}={layer display name}
-            JSONArray jsonArray = getLayerListJSONArray();
-
-            if(jsonArray != null){
-                for (Object o : jsonArray) {
-                    JSONObject jo = (JSONObject) o;
-                    String facetId = getLayerFacetName(jo.get("name").toString());
+            List layers = getLayerListJSONArray();
+            if (layers != null) {
+                for (Object o : layers) {
+                    JSONObject facet = (JSONObject) o;
+                    String facetId = facet.get(StringConstants.ID).toString();
                     if (facetId != null) {
-                        p.put("facet." + facetId, ((JSONObject) o).get("displayname").toString());
+                        p.put("facet." + facetId, facet.get(StringConstants.NAME).toString());
                     }
                 }
+            } else {
+                LOGGER.error("layers not added to cached i18n");
             }
 
             i18nProperites = p;
         } catch (Exception e) {
             LOGGER.error("error loading properties file URL: " + i18nURL, e);
         }
+
+        init18n();
     }
 
     public static String getI18nProperty(String key) {
@@ -962,41 +953,21 @@ public final class CommonData {
         return output;
     }
 
-    /**
+    /*
      * get a layer JSONObject with the short name.
      */
-    public static JSONObject getLayerByShortName(String name) {
-        JSONObject layer = null;
-        for (int i = 0; i < layerlistJSON.size(); i++) {
-            layer = (JSONObject) layerlistJSON.get(i);
-            if (layer.get(StringConstants.NAME).toString().equalsIgnoreCase(name)) {
-                break;
-            } else {
-                layer = null;
+    public static JSONObject getLayer(String name) {
+        JSONObject found = null;
+        for (int i = 0; i < layerlistJSON.size() && found == null; i++) {
+            JSONObject field = (JSONObject) layerlistJSON.get(i);
+            if (field.get(StringConstants.ID).toString().equalsIgnoreCase(name) ||
+                    (((JSONObject) field.get("layer")).get(StringConstants.NAME).toString().equalsIgnoreCase(name) &&
+                            field.get("defaultlayer").toString().equals("true"))) {
+                found = field;
             }
         }
-        return layer;
+        return found;
     }
-
-    /**
-     * get a layer JSONObject with the short name.
-     */
-    public static JSONObject getLayerByFID(String fid) {
-        JSONObject layer = null;
-        if(fid.startsWith("cl") || fid.startsWith("el") ){
-            String id = fid.substring(2);
-            for (int i = 0; i < layerlistJSON.size(); i++) {
-                layer = (JSONObject) layerlistJSON.get(i);
-                if (layer.get(StringConstants.ID).toString().equalsIgnoreCase(id)) {
-                    break;
-                } else {
-                    layer = null;
-                }
-            }
-        }
-        return layer;
-    }
-
 
     static void initBiocacheLayerList() {
         String url = biocacheServer + "/index/fields";
@@ -1077,15 +1048,17 @@ public final class CommonData {
     }
 
     public static String[] getAreaReportFacets() {
-        return areaReportFacets;
+        int extra = (speciesListInvasive.length() == 0 ? 0 : 1) + (speciesListThreatened.length() == 0 ? 0 : 1);
+        String[] ret = new String[areaReportFacets.length + extra];
+        System.arraycopy(areaReportFacets, 0, ret, extra, areaReportFacets.length);
+        int pos = 0;
+        if (speciesListInvasive.length() > 0) ret[pos++] = speciesListInvasive;
+        if (speciesListThreatened.length() > 0) ret[pos++] = speciesListThreatened;
+        return ret;
     }
 
     public static boolean getDisplayPointsOfInterest() {
         return displayPointsOfInterest;
-    }
-
-    public static boolean getAutoCompleteCountsEnabled() {
-        return autoCompleteCountsEnabled;
     }
 
     public static List<LayerSelection> getAnalysisLayerSets() {
@@ -1354,13 +1327,24 @@ public final class CommonData {
         return list;
     }
 
+    public static String speciesListThreatened = "";
+    public static String speciesListInvasive = "";
+
     private static Map<String, Map<String, List<String>>> initSpeciesListAdditionalColumns() {
         Map<String, Map<String, List<String>>> map = new HashMap<String, Map<String, List<String>>>();
 
         String slac = settings.getProperty("species.list.additional.columns", "");
+        //append dynamic columns
+        slac += dynamicSpeciesListColumns();
         String[] columns = slac.split("\\|");
         for (String line : columns) {
             String[] parts = line.split(",");
+            if (parts[0].equals("Conservation")) {
+                speciesListThreatened = "species_list_uid:" + StringUtils.join(Arrays.copyOfRange(parts, 1, parts.length), " OR species_list_uid:");
+            }
+            if (parts[0].equals("Invasive")) {
+                speciesListInvasive = "species_list_uid:" + StringUtils.join(Arrays.copyOfRange(parts, 1, parts.length), " OR species_list_uid:");
+            }
             if (parts.length > 1) {
                 String columnTitle = parts[0];
                 for (int i = 1; i < parts.length; i++) {
@@ -1370,7 +1354,8 @@ public final class CommonData {
                         String listName = ((JSONObject) jp.parse(IOUtils.toString(is))).get("listName").toString();
                         is.close();
 
-                        Map<String, List<String>> m = new HashMap<String, List<String>>();
+                        Map<String, List<String>> m = map.get(columnTitle);
+                        if (m == null) m = new HashMap<String, List<String>>();
                         ArrayList<String> sp = new ArrayList<String>();
                         //fetch species list
 
@@ -1392,11 +1377,37 @@ public final class CommonData {
         return map;
     }
 
+    private static String dynamicSpeciesListColumns() {
+        StringBuilder sb = new StringBuilder();
+        try {
+            JSONParser jp = new JSONParser();
+            JSONObject threatened = (JSONObject) jp.parse(Util.readUrl(settings.getProperty("species_list_url", "") + "/ws/speciesList/?isThreatened=eq:true&isAuthoritative=eq:true"));
+            JSONObject invasive = (JSONObject) jp.parse(Util.readUrl(settings.getProperty("species_list_url", "") + "/ws/speciesList/?isInvasive=eq:true&isAuthoritative=eq:true"));
+
+            JSONObject[] lists = {threatened, invasive};
+
+            for (JSONObject o : lists) {
+                if (sb.length() == 0) sb.append("Conservation");
+                else sb.append("|Invasive");
+                JSONArray ja = (JSONArray) o.get("lists");
+                for (int i = 0; i < ja.size(); i++) {
+                    sb.append(",").append(((JSONObject) ja.get(i)).get("dataResourceUid"));
+                }
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("failed to get species lists for threatened or invasive species", e);
+        }
+        return sb.toString();
+    }
+
     public static List<String> getSpeciesListAdditionalColumnsHeader() {
         return new ArrayList<String>(speciesListAdditionalColumns.keySet());
     }
 
     public static List<String> getSpeciesListAdditionalColumns(List<String> headers, String lsid) {
+        //extract lsid from names_and_lsid field
+        if (lsid != null && lsid.contains("|") && lsid.split("\\|").length > 1) lsid = lsid.split("\\|")[1];
         List<String> list = new ArrayList<String>();
         for (int i = 0; i < headers.size(); i++) {
             StringBuilder sb = new StringBuilder();
@@ -1413,5 +1424,101 @@ public final class CommonData {
         }
 
         return list;
+    }
+
+    private static void init18n() {
+        try {
+            Map<String, String[][]> tmpMap = new LinkedHashMap<String, String[][]>();
+            List<QueryField> tmpList = new ArrayList<QueryField>();
+            //get the JSON from the WS\
+            JSONParser jp = new JSONParser();
+            JSONArray values = (JSONArray) jp.parse(Util.readUrl(CommonData.getBiocacheServer() + FACET_SUFFIX));
+
+            LOGGER.debug(values);
+            Map<String, QueryField.FieldType> dataTypes = getDataTypes();
+            for (Object v : values) {
+                JSONObject value = (JSONObject) v;
+                //extract the group
+                String title = value.get(StringConstants.TITLE).toString();
+                //now get the facets themselves
+                List<Map<String, String>> facets = (List<Map<String, String>>) value.get("facets");
+                String[][] facetValues = new String[facets.size()][2];
+                int i = 0;
+                for (Map<String, String> facet : facets) {
+                    String field = facet.get("field");
+                    //Only add if it is not included in the ignore list
+                    if (!CommonData.ignoredFacets.contains(field)) {
+                        String i18n = i18nProperites.getProperty("facet." + field, field);
+
+                        //TODO: update biocache i18n instead of doing this
+                        if ("data_provider".equals(field)) {
+                            i18n = "Data Provider";
+                        }
+
+                        //use current layer names for facets
+                        try {
+                            String layername = CommonData.getFacetLayerName(field);
+                            if (i18n == null || layername != null) {
+                                i18n = CommonData.getLayerDisplayName(layername);
+                            }
+                        } catch (Exception e) {
+
+                        }
+
+                        facetValues[i][0] = field;
+                        facetValues[i][1] = i18n;
+                        QueryField.FieldType ftype = dataTypes.containsKey(field) ? dataTypes.get(field) : QueryField.FieldType.STRING;
+
+
+                        QueryField qf = new QueryField(field, i18n, QueryField.GroupType.getGroupType(title), ftype);
+                        tmpList.add(qf);
+                        i++;
+                    }
+                }
+                tmpMap.put(title, facetValues);
+            }
+
+            //add a bunch of configured extra fields from the default values
+            for (String f : CommonData.customFacets) {
+                String i18n = i18nProperites.getProperty("facet." + f, f);
+                tmpList.add(new QueryField(f, i18n, QueryField.GroupType.CUSTOM, QueryField.FieldType.STRING));
+            }
+
+            facetQueryFieldList = tmpList;
+            LOGGER.debug("Grouped Facets: " + tmpMap);
+            LOGGER.debug("facet query list : " + facetQueryFieldList);
+        } catch (Exception e) {
+            LOGGER.error("failed to init i18n", e);
+        }
+    }
+
+    public static List<QueryField> getFacetQueryFieldList() {
+        return facetQueryFieldList;
+    }
+
+    /**
+     * Extracts the biocache data types from the webservice so that they can be used to dynamically load the facets
+     *
+     * @return
+     */
+    private static Map<String, QueryField.FieldType> getDataTypes() throws Exception {
+        Map<String, QueryField.FieldType> map = new HashMap<String, QueryField.FieldType>();
+        //get the JSON from the WS
+        JSONParser jp = new JSONParser();
+        JSONArray values = (JSONArray) jp.parse(Util.readUrl(CommonData.getBiocacheServer() + "/index/fields"));
+        for (Object mvalues : values) {
+            String name = ((JSONObject) mvalues).get(StringConstants.NAME).toString();
+            String dtype = ((JSONObject) mvalues).get("dataType").toString();
+            if ("string".equals(dtype) || "textgen".equals(dtype)) {
+                map.put(name, QueryField.FieldType.STRING);
+            } else if ("int".equals(dtype) || "tint".equals(dtype) || "tdate".equals(dtype)) {
+                map.put(name, QueryField.FieldType.INT);
+            } else if ("double".equals(dtype) || "tdouble".equals(dtype)) {
+                map.put(name, QueryField.FieldType.DOUBLE);
+            } else {
+                map.put(name, QueryField.FieldType.STRING);
+            }
+        }
+        return map;
     }
 }

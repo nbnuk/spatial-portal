@@ -36,18 +36,18 @@ import java.util.zip.GZIPInputStream;
  * @author Adam
  */
 public class BiocacheQuery implements Query, Serializable {
-    static final String SAMPLING_SERVICE_CSV_GZIP = "/mapping/occurrences.gz?";
-    static final String SAMPLING_SERVICE = "/mapping/occurrences?";
-    static final String SPECIES_LIST_SERVICE_CSV = "/occurrences/facets/download?facets=species_guid&lookup=true&count=true&";
-    static final String SPECIES_COUNT_SERVICE = "/occurrence/facets?facets=species_guid";
+    static final String SAMPLING_SERVICE_CSV_GZIP = "/webportal/occurrences.gz?";
+    static final String SAMPLING_SERVICE = "/webportal/occurrences?";
+    static final String SPECIES_LIST_SERVICE_CSV = "/occurrences/facets/download?facets=names_and_lsid&lookup=true&count=true&";
+    static final String SPECIES_COUNT_SERVICE = "/occurrence/facets?facets=names_and_lsid";
     static final String DOWNLOAD_URL = "/occurrences/download?";
-    static final String DATA_PROVIDERS_SERVICE = "/mapping/dataProviders?";
+    static final String DATA_PROVIDERS_SERVICE = "/webportal/dataProviders?";
     static final String QUERY_TITLE_URL = "/occurrences/search?";
-    static final String LEGEND_SERVICE_CSV = "/mapping/legend?";
-    static final String BOUNDING_BOX_CSV = "/mapping/bbox?";
+    static final String LEGEND_SERVICE_CSV = "/webportal/legend?";
+    static final String BOUNDING_BOX_CSV = "/webportal/bbox?";
     static final String INDEXED_FIELDS_LIST = "/indexed/fields?";
-    static final String POST_SERVICE = "/mapping/params?";
-    static final String QID_DETAILS = "/mapping/params/details/";
+    static final String POST_SERVICE = "/webportal/params?";
+    static final String QID_DETAILS = "/webportal/params/details/";
     static final String ENDEMIC_COUNT_SERVICE = "/explore/counts/endemic?";
     static final String ENDEMIC_SPECIES_SERVICE_CSV = "/explore/endemic/species.csv?";
     static final String DEFAULT_ROWS = "pageSize=1000000";
@@ -58,7 +58,7 @@ public class BiocacheQuery implements Query, Serializable {
      */
     static final String DEFAULT_VALIDATION = "";
     static final String BIE_SPECIES = "/species/";
-    static final String WMS_URL = "/mapping/wms/reflect?";
+    static final String WMS_URL = "/webportal/wms/reflect?";
     private static final Logger LOGGER = Logger.getLogger(BiocacheQuery.class);
     private static final String[] COMMON_TAXON_RANKS = new String[]{
             "cultivar",
@@ -306,7 +306,7 @@ public class BiocacheQuery implements Query, Serializable {
 
     public static String getScientificNameRank(String lsid) {
 
-        String snUrl = CommonData.getBieServer() + BIE_SPECIES + lsid;
+        String snUrl = CommonData.getBieServer() + BIE_SPECIES + lsid + ".json";
         LOGGER.debug(snUrl);
 
         try {
@@ -382,7 +382,7 @@ public class BiocacheQuery implements Query, Serializable {
         String[] classificationList = {StringConstants.KINGDOM, StringConstants.PHYLUM, StringConstants.CLASS, StringConstants.ORDER, StringConstants.FAMILY, StringConstants.GENUS, StringConstants.SPECIES, StringConstants.SUB_SPECIES, StringConstants.SCIENTIFIC_NAME};
         Map<String, String> classification = new LinkedHashMap<String, String>();
 
-        String snUrl = CommonData.getBieServer() + BIE_SPECIES + lsid;
+        String snUrl = CommonData.getBieServer() + BIE_SPECIES + lsid + ".json";
         LOGGER.debug(snUrl);
 
         try {
@@ -1153,8 +1153,8 @@ public class BiocacheQuery implements Query, Serializable {
                     post.addParameter(q.substring(0, p), q.substring(p + 1));
                     LOGGER.debug("param: " + q.substring(0, p) + " : " + q.substring(p + 1));
                 }
-                post.addParameter(StringConstants.BBOX, forMapping ? StringConstants.TRUE : StringConstants.FALSE);
             }
+            post.addParameter(StringConstants.BBOX, forMapping ? StringConstants.TRUE : StringConstants.FALSE);
             int result = client.executeMethod(post);
             String response = post.getResponseBodyAsString();
 
@@ -1297,7 +1297,7 @@ public class BiocacheQuery implements Query, Serializable {
                 fields.addAll(retrieveCustomFacets());
             }
             //NC: Load all the facets fields from the cache which is populated from the biocache=service
-            fields.addAll(FacetCacheImpl.getFacetQueryFieldList());
+            fields.addAll(CommonData.getFacetQueryFieldList());
 
             for (int i = 0; i < fields.size(); i++) {
                 fields.get(i).setStored(true);
@@ -1603,11 +1603,11 @@ public class BiocacheQuery implements Query, Serializable {
                         first = false;
                     }
 
-                    html.append("<a href='").append(CommonData.getBieWebServer()).append(BIE_SPECIES).append(o.getValue()).append("' target='_blank'>").append(o.getKey()).append("</a> ");
+                    html.append("<a href='").append(CommonData.getBieServer()).append(BIE_SPECIES).append(o.getValue()).append("' target='_blank'>").append(o.getKey()).append("</a> ");
                 }
 
                 html.append("<br />");
-                html.append("More information for <a href='").append(CommonData.getBieWebServer()).append(BIE_SPECIES).append(s).append("' target='_blank'>").append(getScientificNameRank(s).split(",")[0]).append("</a>");
+                html.append("More information for <a href='").append(CommonData.getBieServer()).append(BIE_SPECIES).append(s).append("' target='_blank'>").append(getScientificNameRank(s).split(",")[0]).append("</a>");
                 html.append("<br />");
                 html.append("<br />");
             }
@@ -1649,7 +1649,7 @@ public class BiocacheQuery implements Query, Serializable {
         String[] classificationList = {StringConstants.KINGDOM, StringConstants.PHYLUM, StringConstants.CLASS, StringConstants.ORDER, StringConstants.FAMILY, StringConstants.GENUS, StringConstants.SPECIES, StringConstants.SUB_SPECIES};
         Map<String, String> classification = new LinkedHashMap<String, String>();
 
-        String snUrl = CommonData.getBieServer() + BIE_SPECIES + lsid;
+        String snUrl = CommonData.getBieServer() + BIE_SPECIES + lsid + ".json";
         LOGGER.debug(snUrl);
 
         try {

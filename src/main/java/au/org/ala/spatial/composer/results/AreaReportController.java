@@ -177,8 +177,6 @@ public class AreaReportController extends UtilityComposer {
 
     public void setReportArea(SelectedArea sa, String name, String displayname, String areaSqKm, double[] boundingBox, boolean includeEndemic) {
         this.selectedArea = sa;
-        //initialize reduced area
-        sa.getReducedWkt();
 
         this.areaName = name;
         this.areaDisplayName = displayname;
@@ -267,7 +265,7 @@ public class AreaReportController extends UtilityComposer {
 
     void startQueries() {
 
-        final boolean worldAreaSelected = CommonData.WORLD_WKT.equals(selectedArea.getWkt());
+        final boolean worldAreaSelected = CommonData.WORLD_WKT.equals(selectedArea.getFacets() == null ? selectedArea.getWkt() : null);
 
         reportModelMap = setUpModelMap(worldAreaSelected);
         areaReportListModel = new ChangableSimpleListModel(new ArrayList(reportModelMap.values()));
@@ -510,7 +508,7 @@ public class AreaReportController extends UtilityComposer {
                 futures.put("AreaFacetCounts" + i, pool.submit(areaFacets[i]));
             }
             futures.put("SpeciesCount", pool.submit(speciesCount));
-            futures.put("SpeciesCountK  osher", pool.submit(speciesCountKosher));
+            futures.put("SpeciesCountKosher", pool.submit(speciesCountKosher));
             futures.put("GazPoints", pool.submit(gazPointsC));
             futures.put("SpeciesChecklists", pool.submit(speciesChecklists));
             futures.put("SpeciesDistributions", pool.submit(speciesDistributions));
@@ -645,6 +643,7 @@ public class AreaReportController extends UtilityComposer {
 
         Query sq = QueryUtil.queryFromSelectedArea(null, selectedArea, query, false, null);
         int count = sq.getSpeciesCount();
+        if (count == -1) count = 0;
         String label = Labels.getLabel("facet." + facet, facet);
         //title
         dto.setTitle(label);
@@ -652,7 +651,11 @@ public class AreaReportController extends UtilityComposer {
         dto.setCount(String.format("%,d", count));
         //add the appropriate urls
         //check to see if it is a species list
-        if (facet.startsWith("species_list") && colonIdx > 0) {
+        if (facet.equals(CommonData.speciesListThreatened)) {
+            dto.setTitle("Threatened Species");
+        } else if (facet.equals(CommonData.speciesListInvasive)) {
+            dto.setTitle("Invasive Species");
+        } else if (facet.startsWith("species_list") && colonIdx > 0) {
             //extract everything to the right of the colon and construct the url
             String dataResourceUid = facet.substring(colonIdx + 1);
             String title = SpeciesListUtil.getSpeciesListMap().get(dataResourceUid);
@@ -660,10 +663,6 @@ public class AreaReportController extends UtilityComposer {
                 dto.setTitle(title);
             }
             dto.addUrlDetails("Full List", CommonData.getSpeciesListServer() + "/speciesListItem/list/" + dataResourceUid);
-        } else if (facet.startsWith("state_conservation")) {
-            dto.setTitle("Threatened Species (sensitive only lists)");
-        } else if (facet.startsWith("pest_flag")) {
-            dto.setTitle("Invasive Species (sensitive only lists)");
         } else if (facet.startsWith("species_group")) {
             dto.setTitle(facet.substring(colonIdx + 1));
         }
@@ -861,7 +860,7 @@ public class AreaReportController extends UtilityComposer {
         Map<String, Integer> speciesDistributions = new HashMap<String, Integer>();
         try {
             String wkt = selectedArea.getReducedWkt();
-            if (wkt.contains(StringConstants.ENVELOPE) && selectedArea.getMapLayer() != null) {
+            if (wkt!=null && wkt.contains(StringConstants.ENVELOPE) && selectedArea.getMapLayer() != null) {
                 // use boundingbox
                 List<Double> bbox = selectedArea.getMapLayer().getMapLayerMetadata().getBbox();
                 double long1 = bbox.get(0);
@@ -893,7 +892,7 @@ public class AreaReportController extends UtilityComposer {
         Map<String, String> checklistsCounts = new HashMap<String, String>();
         try {
             String wkt = selectedArea.getReducedWkt();
-            if (wkt.contains(StringConstants.ENVELOPE) && selectedArea.getMapLayer() != null) {
+            if (wkt != null && wkt.contains(StringConstants.ENVELOPE) && selectedArea.getMapLayer() != null) {
                 // use boundingbox
                 List<Double> bbox = selectedArea.getMapLayer().getMapLayerMetadata().getBbox();
                 double long1 = bbox.get(0);
@@ -934,7 +933,7 @@ public class AreaReportController extends UtilityComposer {
         Map<String, String> gazPointsCounts = new HashMap<String, String>();
         try {
             String wkt = selectedArea.getReducedWkt();
-            if (wkt.contains(StringConstants.ENVELOPE) && selectedArea.getMapLayer() != null) {
+            if (wkt != null && wkt.contains(StringConstants.ENVELOPE) && selectedArea.getMapLayer() != null) {
                 // use boundingbox
                 List<Double> bbox = selectedArea.getMapLayer().getMapLayerMetadata().getBbox();
                 double long1 = bbox.get(0);
@@ -967,7 +966,7 @@ public class AreaReportController extends UtilityComposer {
         Map<String, String> poiCounts = new HashMap<String, String>();
         try {
             String wkt = selectedArea.getReducedWkt();
-            if (wkt.contains(StringConstants.ENVELOPE) && selectedArea.getMapLayer() != null) {
+            if (wkt != null && wkt.contains(StringConstants.ENVELOPE) && selectedArea.getMapLayer() != null) {
                 // use boundingbox
                 List<Double> bbox = selectedArea.getMapLayer().getMapLayerMetadata().getBbox();
                 double long1 = bbox.get(0);
@@ -1005,7 +1004,7 @@ public class AreaReportController extends UtilityComposer {
             double lat2 = 0;
             double long1 = 0;
             double long2 = 0;
-            if (area.contains(StringConstants.ENVELOPE) && selectedArea.getMapLayer() != null) {
+            if (area != null && area.contains(StringConstants.ENVELOPE) && selectedArea.getMapLayer() != null) {
                 // use boundingbox
                 List<Double> bbox = selectedArea.getMapLayer().getMapLayerMetadata().getBbox();
                 long1 = bbox.get(0);
@@ -1287,5 +1286,25 @@ public class AreaReportController extends UtilityComposer {
 
             fireEvent(ListDataEvent.CONTENTS_CHANGED, -1, -1);
         }
+    }
+
+    public void onClick$btnDownload(Event event) {
+        String spid = pid;
+        if (spid == null || StringConstants.NONE.equals(spid)) {
+            spid = String.valueOf(System.currentTimeMillis());
+        }
+
+        SimpleDateFormat date = new SimpleDateFormat(StringConstants.DATE);
+        String sdate = date.format(new Date());
+
+        StringBuilder sb = new StringBuilder();
+        //area name
+        sb.append("Area: " + areaDisplayName);
+        for (Map.Entry<String, AreaReportItemDTO> i : reportModelMap.entrySet()) {
+            sb.append("\n\"").append(i.getValue().getTitle()).append("\",\"").append(i.getValue().getCount()).append("\"");
+        }
+
+
+        Filedownload.save(sb.toString(), StringConstants.TEXT_PLAIN, "Area_report_" + sdate + "_" + spid + ".csv");
     }
 }

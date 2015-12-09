@@ -74,7 +74,14 @@ public class AddAreaController extends UtilityComposer {
             overlapped = false;
         } else if (cbAreaSelection.getSelectedItem() == ciMapPolygon) {
             List<MapLayer> layers = getMapComposer().getContextualLayers();
-            if (layers.isEmpty()) {
+            boolean visibleLayers = false;
+            for (MapLayer ml : layers) {
+                if (ml.isDisplayed()) {
+                    visibleLayers = true;
+                    break;
+                }
+            }
+            if (!visibleLayers) {
                 //present layer selection window
                 windowName = "WEB-INF/zul/layer/ContextualLayerSelection.zul";
                 overlapped = false;
@@ -85,7 +92,7 @@ public class AddAreaController extends UtilityComposer {
         } else if (cbAreaSelection.getSelectedItem() == ciEnvironmentalEnvelope) {
             windowName = "WEB-INF/zul/add/area/AreaEnvironmentalEnvelope.zul";
         } else if (cbAreaSelection.getSelectedItem() == ciBoxAustralia) {
-            String wkt = CommonData.getSettings().getProperty(CommonData.SPECIFIC_REGION_WKT);
+            String wkt = CommonData.getSettings().getProperty(CommonData.AUSTRALIA_WKT);
             String layerName = mc.getNextAreaLayerName(CommonData.lang(StringConstants.AUSTRALIA_BOUNDING_BOX));
             MapLayer mapLayer = mc.addWKTLayer(wkt, layerName, layerName);
             mapLayer.getMapLayerMetadata().setMoreInfo(LayersUtil.getMetadata(CommonData.lang(StringConstants.AUSTRALIA_BOUNDING_BOX) + " " + wkt));

@@ -54,7 +54,7 @@ public class AreaMerge extends AreaToolComposer {
 
             boolean isGrid = false;
             if (ml.getFacets() != null
-                    && ml.getWKT() != null && ml.getWKT().startsWith(StringConstants.ENVELOPE)) {
+                    && ml.testWKT() != null && ml.getWKT().startsWith(StringConstants.ENVELOPE)) {
                 String wkt = ml.getWKT();
 
                 //get fid
@@ -63,16 +63,11 @@ public class AreaMerge extends AreaToolComposer {
                 if (fid.startsWith("cl")) {
                     JSONArray ja = CommonData.getLayerListJSONArray();
                     for (int j = 0; j < ja.size() && !isGrid; j++) {
-                        JSONObject jo = (JSONObject) ja.get(j);
-                        if (jo.get(StringConstants.ID).toString().equalsIgnoreCase(fid) && jo.containsKey(StringConstants.FIELDS)) {
-                            JSONArray fields = (JSONArray) jo.get(StringConstants.FIELDS);
-                            for (int k = 0; k < fields.size() && !isGrid; k++) {
-                                JSONObject field = (JSONObject) fields.get(k);
-                                if ("a".equalsIgnoreCase(field.get(StringConstants.TYPE).toString()) ||
-                                        "b".equalsIgnoreCase(field.get(StringConstants.TYPE).toString())) {
-                                    isGrid = true;
-                                }
-                            }
+                        JSONObject field = (JSONObject) ja.get(j);
+                        JSONObject layer = (JSONObject) field.get("layer");
+                        if (field.get(StringConstants.ID).toString().equalsIgnoreCase(fid)) {
+                            isGrid = "a".equalsIgnoreCase(field.get(StringConstants.TYPE).toString()) ||
+                                    "b".equalsIgnoreCase(field.get(StringConstants.TYPE).toString());
                         }
                     }
                 } else {
@@ -153,8 +148,8 @@ public class AreaMerge extends AreaToolComposer {
                     }
                 } else {
                     String swkt = null;
-                    if (CommonData.getSettings().getProperty(CommonData.SPECIFIC_REGION_NAME).equalsIgnoreCase(cb.getLabel())) {
-                        swkt = CommonData.getSettings().getProperty(CommonData.SPECIFIC_REGION_WKT);
+                    if (CommonData.getSettings().getProperty(CommonData.AUSTRALIA_NAME).equalsIgnoreCase(cb.getLabel())) {
+                        swkt = CommonData.getSettings().getProperty(CommonData.AUSTRALIA_WKT);
                     } else if ("Current Extent".equalsIgnoreCase(cb.getLabel())) {
                         swkt = getMapComposer().getViewArea();
                     } else {

@@ -15,6 +15,7 @@ import com.vividsolutions.jts.io.ParseException;
 import com.vividsolutions.jts.io.WKTReader;
 import com.vividsolutions.jts.io.WKTWriter;
 import com.vividsolutions.jts.operation.valid.IsValidOp;
+import com.vividsolutions.jts.simplify.TopologyPreservingSimplifier;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -544,38 +545,23 @@ public final class Util {
             return new WKTReducedDTO(null, null, "Invalid WKT.");
         }
         try {
-            WKTReader wktReader;
-            com.vividsolutions.jts.geom.Geometry g = null;
+            WKTReader wktReader = new WKTReader();
+            Geometry g = wktReader.read(wkt);
 
-            //reduction attempts, 3 decimal places, 2, 1, .2 increments, .5 increments,
-            // and finally, convert to 1/1.001 increments (expected to be larger) then back to .5 increments (expected to be smaller)
-            // to make the WKT string shorter.
-            double[] reductionValues = {1000, 100, 10, 5, 2};
-            int attempt = 0;
-            while (wkt.length() > Integer.parseInt(CommonData.getSettings().getProperty("max_q_wkt_length")) && attempt < reductionValues.length) {
-                if (g == null) {
-                    wktReader = new WKTReader();
-                    g = wktReader.read(wkt);
-                }
+            int maxPoints = Integer.parseInt(CommonData.getSettings().getProperty("max_q_wkt_points", "200"));
 
-                int startLength = wkt.length();
+            Geometry bestReduction = g;
+            double distance = 0.0001;
+            while (maxPoints > 0 && g.getNumPoints() > maxPoints && distance < 10) {
+                Geometry gsimplified = TopologyPreservingSimplifier.simplify(g, distance);
+                bestReduction = gsimplified;
+                reducedBy = "Simplified using distance tolerance " + distance;
 
-                //reduce to decimal places
-                g = com.vividsolutions.jts.precision.GeometryPrecisionReducer.reduce(g, new PrecisionModel(reductionValues[attempt]));
-
-                //stop if something is wrong and use previous iteration WKT
-                String newwkt = g.toString();
-                if (g == null || newwkt == null || newwkt.length() < 100 || !(new IsValidOp(g).isValid())) {
-                    break;
-                }
-
-                wkt = newwkt;
-                LOGGER.info("reduced WKT from string length " + startLength + " to " + wkt.length());
-
-                reducedBy = String.format("Reduced to resolution %f decimal degrees. \r\nWKT character length " + startLength + " to " + wkt.length(), 1 / reductionValues[attempt]);
-
-                attempt++;
+                distance *= 2;
             }
+
+            wkt = bestReduction.toText();
+            
             LOGGER.info("user WKT of length: " + wkt.length());
         } catch (Exception e) {
             LOGGER.error("failed to reduce WKT size", e);
@@ -607,7 +593,7 @@ public final class Util {
     public static String[] getDistributionOrChecklist(String spcode) {
         try {
             StringBuilder sbProcessUrl = new StringBuilder();
-            sbProcessUrl.append("/distribution/").append(spcode);
+            sbProcessUrl.append("/distribution/").append(spcode).append("?nowkt=true");
 
             HttpClient client = new HttpClient();
             GetMethod get = new GetMethod(CommonData.getLayersServer() + sbProcessUrl.toString());
@@ -1065,5 +1051,46 @@ public final class Util {
         } catch (Exception e) {
             return Util.getBoundingBox(CommonData.WORLD_WKT);
         }
+    }
+
+    /**
+     * get the domain from a layer
+     *
+     * @param layerObject
+     * @return
+     */
+    public static String[] getDomain(JSONObject layerObject) {
+        if (!layerObject.containsKey(StringConstants.DOMAIN)) {
+            return new String[0];
+        }
+        String ds = layerObject.get(StringConstants.DOMAIN).toString();
+        if (ds != null) {
+            String[] d = ds.split(",");
+            for (int i = 0; i < d.length; i++) {
+                d[i] = d[i].trim();
+            }
+            return d;
+        } else {
+            return new String[0];
+        }
+    }
+
+    /**
+     * compare layer domains
+     */
+    public static boolean isSameDomain(String[] domain1, String[] domain2) {
+        if (domain1.length == 0 || domain2.length == 0) {
+            return true;
+        }
+
+        for (String s1 : domain1) {
+            for (String s2 : domain2) {
+                if (s1.equalsIgnoreCase(s2)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

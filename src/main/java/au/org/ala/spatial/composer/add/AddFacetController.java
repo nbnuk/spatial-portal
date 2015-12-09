@@ -281,13 +281,13 @@ public class AddFacetController extends UtilityComposer {
             if (StringConstants.CURRENT.equals(area)) {
                 selectedarea = new SelectedArea(null, getMapComposer().getViewArea());
             } else if (StringConstants.AUSTRALIA.equals(area)) {
-                selectedarea = new SelectedArea(null, CommonData.getSettings().getProperty(CommonData.SPECIFIC_REGION_WKT));
+                selectedarea = new SelectedArea(null, CommonData.getSettings().getProperty(CommonData.AUSTRALIA_WKT));
             } else if (StringConstants.WORLD.equals(area)) {
                 selectedarea = new SelectedArea(null, CommonData.WORLD_WKT);
             } else {
                 List<MapLayer> layers = getMapComposer().getPolygonLayers();
                 for (MapLayer ml : layers) {
-                    if (area.equals(ml.getWKT())) {
+                    if (area.equals(ml.getName())) {
                         selectedarea = new SelectedArea(ml, null);
                         break;
                     }
@@ -1107,7 +1107,7 @@ public class AddFacetController extends UtilityComposer {
             for (int i = 0; i < layers.size(); i++) {
                 MapLayer lyr = layers.get(i);
                 Radio rAr = new Radio(lyr.getDisplayName());
-                rAr.setValue(lyr.getWKT());
+                rAr.setValue(lyr.getName());
 
                 rAr.setParent(rgArealocal);
                 rgArealocal.insertBefore(rAr, rAreaCurrent);
@@ -1168,7 +1168,7 @@ public class AddFacetController extends UtilityComposer {
             for (int i = 0; i < layers.size(); i++) {
                 MapLayer lyr = layers.get(i);
                 Radio rAr = new Radio(lyr.getDisplayName());
-                rAr.setValue(lyr.getWKT());
+                rAr.setValue(lyr.getName());
 
                 rAr.setParent(rgArealocal);
                 rgArealocal.insertBefore(rAr, rAreaCurrentHighlight);
@@ -1217,7 +1217,7 @@ public class AddFacetController extends UtilityComposer {
                 MapLayer lyr = layers.get(i);
                 Radio rAr = new Radio(lyr.getDisplayName());
                 rAr.setId(lyr.getName().replaceAll(" ", ""));
-                rAr.setValue(lyr.getWKT());
+                rAr.setValue(lyr.getName());
                 rAr.setParent(rgArealocal);
                 rgArealocal.insertBefore(rAr, rAreaCurrent);
             }

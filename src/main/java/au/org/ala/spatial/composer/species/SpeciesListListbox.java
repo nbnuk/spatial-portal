@@ -177,6 +177,19 @@ public class SpeciesListListbox extends Listbox {
         return new BiocacheQuery(lsids, unmatchedNames, null, null, facets, false, geospatialKosher);
     }
 
+    public String getSelectedNames() {
+        String name = "";
+        for (String list : selectedLists) {
+            for (SpeciesListDTO i : currentLists) {
+                if (i.getDataResourceUid().equals(list)) {
+                    if (name.length() > 0) name += "|";
+                    name += i.getListName();
+                }
+            }
+        }
+        return name;
+    }
+
     public void onClick$btnSearchSpeciesListListbox(Event event) {
 
         //((SpeciesListListModel) getModel()).setTxtSearchTerm((Textbox) getParent().getFellowIfAny("txtSearchTerm"));

@@ -444,8 +444,8 @@ public class LayerLegendScatterplotController extends UtilityComposer implements
             } else {
                 String name = "Previous area";
                 if (data.getHighlightSa().getWkt() != null) {
-                    if (data.getHighlightSa().getWkt().equals(CommonData.getSettings().getProperty(CommonData.SPECIFIC_REGION_WKT))) {
-                        name = CommonData.getSettings().getProperty(CommonData.SPECIFIC_REGION_NAME);
+                    if (data.getHighlightSa().getWkt().equals(CommonData.getSettings().getProperty(CommonData.AUSTRALIA_NAME))) {
+                        name = CommonData.getSettings().getProperty(CommonData.AUSTRALIA_NAME);
                     } else if (data.getHighlightSa().getWkt().equals(CommonData.WORLD_WKT)) {
                         name = "World";
                     }
@@ -462,7 +462,7 @@ public class LayerLegendScatterplotController extends UtilityComposer implements
         if (cbHighlightArea.getSelectedItem() != null) {
             if (cbHighlightArea.getSelectedItem().getValue() instanceof MapLayer) {
                 MapLayer ml = cbHighlightArea.getSelectedItem().getValue();
-                SelectedArea sa = new SelectedArea(ml, ml.getWKT());
+                SelectedArea sa = new SelectedArea(ml, ml.getFacets() == null ? ml.getWKT() : null);
                 data.setHighlightSa(sa);
             } else {
                 String wkt = cbHighlightArea.getSelectedItem().getValue();

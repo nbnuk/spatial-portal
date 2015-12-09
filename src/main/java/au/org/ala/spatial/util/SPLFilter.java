@@ -29,7 +29,7 @@ public class SPLFilter {
                      double minimum, double maximum) {
         this.layer = layer;
         if (layer != null) {
-            layername = layer.get(StringConstants.NAME).toString();
+            layername = layer.get(StringConstants.ID).toString();
         }
         this.catagories = catagories == null ? null : catagories.clone();
         this.catagoryNames = catagoryNames == null ? null : catagoryNames.clone();
@@ -175,8 +175,8 @@ public class SPLFilter {
                 filterString = string.toString();
             }
         } else {
-            filterString = "between " + String.format("%.4f", (float) minimumValue)
-                    + " and " + String.format("%.4f", (float) maximumValue);
+            filterString = String.format("%.4f", (float) minimumValue)
+                    + " to " + String.format("%.4f", (float) maximumValue);
         }
 
         return filterString;

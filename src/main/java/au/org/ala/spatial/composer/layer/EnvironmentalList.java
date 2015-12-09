@@ -3,6 +3,7 @@ package au.org.ala.spatial.composer.layer;
 import au.org.ala.spatial.StringConstants;
 import au.org.ala.spatial.dto.ListEntryDTO;
 import au.org.ala.spatial.util.CommonData;
+import au.org.ala.spatial.util.Util;
 import au.org.emii.portal.composer.MapComposer;
 import au.org.emii.portal.menu.MapLayer;
 import au.org.emii.portal.util.LayerUtilitiesImpl;
@@ -53,15 +54,16 @@ public class EnvironmentalList extends Listbox {
         listEntries = new ArrayList<ListEntryDTO>();
         JSONArray ja = CommonData.getLayerListJSONArray();
         for (int i = 0; i < ja.size(); i++) {
-            JSONObject jo = (JSONObject) ja.get(i);
+            JSONObject field = (JSONObject) ja.get(i);
+            JSONObject layer = (JSONObject) field.get("layer");
             listEntries.add(
-                    new ListEntryDTO(jo.get(StringConstants.NAME).toString(),
-                            jo.containsKey(StringConstants.DISPLAYNAME) ? jo.get(StringConstants.DISPLAYNAME).toString() : jo.get(StringConstants.NAME).toString(),
-                            jo.containsKey(StringConstants.CLASSIFICATION1) ? jo.get(StringConstants.CLASSIFICATION1).toString() : "",
-                            jo.containsKey(StringConstants.CLASSIFICATION2) ? jo.get(StringConstants.CLASSIFICATION2).toString() : "",
-                            jo.containsKey(StringConstants.TYPE) ? jo.get(StringConstants.TYPE).toString() : "",
-                            jo.containsKey(StringConstants.DOMAIN) ? jo.get(StringConstants.DOMAIN).toString() : "",
-                            jo));
+                    new ListEntryDTO(field.get(StringConstants.ID).toString(),
+                            field.containsKey(StringConstants.NAME) ? field.get(StringConstants.NAME).toString() : field.get(StringConstants.ID).toString(),
+                            layer.containsKey(StringConstants.CLASSIFICATION1) ? layer.get(StringConstants.CLASSIFICATION1).toString() : "",
+                            layer.containsKey(StringConstants.CLASSIFICATION2) ? layer.get(StringConstants.CLASSIFICATION2).toString() : "",
+                            layer.containsKey(StringConstants.TYPE) ? layer.get(StringConstants.TYPE).toString() : "",
+                            layer.containsKey(StringConstants.DOMAIN) ? layer.get(StringConstants.DOMAIN).toString() : "",
+                            layer));
         }
 
         if (includeAnalysisLayers) {
@@ -216,10 +218,10 @@ public class EnvironmentalList extends Listbox {
                     && l.getLayerObject() != null && l.getLayerObject().containsKey(StringConstants.FIELDS)
                     && (fieldId = getFieldId(l.getLayerObject())) != null
                     && CommonData.getDistancesMap().get(fieldId) != null
-                    && (domain = getDomain(l.getLayerObject())).length > 0) {
+                    && (domain = Util.getDomain(l.getLayerObject())).length > 0) {
                 for (ListEntryDTO le : listEntries) {
                     if (le.getLayerObject() != null && le.getLayerObject().containsKey(StringConstants.FIELDS)
-                            && (!singleDomain || isSameDomain(getDomain(le.getLayerObject()), domain))) {
+                            && (!singleDomain || Util.isSameDomain(Util.getDomain(le.getLayerObject()), domain))) {
                         String fieldId2 = getFieldId(le.getLayerObject());
 
                         Double d = CommonData.getDistancesMap().get(fieldId).get(fieldId2);
@@ -266,7 +268,7 @@ public class EnvironmentalList extends Listbox {
         for (int i = 0; i < listEntries.size(); i++) {
             ListEntryDTO l = listEntries.get(i);
             if (l.getLayerObject() != null) {
-                thisDomain = getDomain(l.getLayerObject());
+                thisDomain = Util.getDomain(l.getLayerObject());
 
                 if (thisDomain.length > 0) {
                     boolean defaultDisable = disableContextualLayers && StringConstants.CONTEXTUAL.equalsIgnoreCase(listEntries.get(i).getType());
@@ -294,7 +296,7 @@ public class EnvironmentalList extends Listbox {
             ListEntryDTO l = listEntries.get(((Listitem) o).getIndex());
             if (StringConstants.ENVIRONMENTAL.equalsIgnoreCase(l.getType())
                     && l.getLayerObject() != null) {
-                domain = getDomain(l.getLayerObject());
+                domain = Util.getDomain(l.getLayerObject());
                 if (domain.length > 0) {
                     break;
                 }
@@ -302,22 +304,6 @@ public class EnvironmentalList extends Listbox {
         }
 
         return domain;
-    }
-
-    String[] getDomain(JSONObject layerObject) {
-        if (!layerObject.containsKey(StringConstants.DOMAIN)) {
-            return new String[0];
-        }
-        String ds = layerObject.get(StringConstants.DOMAIN).toString();
-        if (ds != null) {
-            String[] d = ds.split(",");
-            for (int i = 0; i < d.length; i++) {
-                d[i] = d[i].trim();
-            }
-            return d;
-        } else {
-            return new String[0];
-        }
     }
 
     String getFieldId(JSONObject layerObject) {
@@ -365,7 +351,7 @@ public class EnvironmentalList extends Listbox {
             for (int j = 0; j < layers.length; j++) {
                 if (listEntries.get(i).getDisplayName().equalsIgnoreCase(layers[j])
                         || listEntries.get(i).getName().equalsIgnoreCase(layers[j])) {
-                    if (!getItemAtIndex(i).isSelected() && (!singleDomain || isSameDomain(firstDomain, getDomain(listEntries.get(i).getLayerObject())))) {
+                    if (!getItemAtIndex(i).isSelected() && (!singleDomain || Util.isSameDomain(firstDomain, Util.getDomain(listEntries.get(i).getLayerObject())))) {
                         toggleItemSelection(getItemAtIndex(i));
                     }
                     break;
@@ -408,21 +394,5 @@ public class EnvironmentalList extends Listbox {
 
     public boolean getIncludeAnalysisLayers() {
         return includeAnalysisLayers;
-    }
-
-    private boolean isSameDomain(String[] domain1, String[] domain2) {
-        if (domain1.length == 0 || domain2.length == 0) {
-            return true;
-        }
-
-        for (String s1 : domain1) {
-            for (String s2 : domain2) {
-                if (s1.equalsIgnoreCase(s2)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 }
