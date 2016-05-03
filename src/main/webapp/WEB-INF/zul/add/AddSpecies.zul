@@ -33,7 +33,7 @@
                             <div id="searchSpeciesACComponent" use="au.org.ala.spatial.composer.species.SpeciesAutoCompleteComponent"/>
                         </hbox>
                         <separator/>
-                        <label sclass="wCaption" value='For example: "Macropus rufus" or "Red Kangaroo"'/>
+                        <label sclass="wCaption" value='For example: "Passer domesticus" or "House Sparrow"'/>
                         <separator height="20px"/>
                     </vbox>
                     <radio id="rMultiple" label="Create new species list"  visible='${addspecieswindow.getMapComposer().getSettingsSupplementary().getProperty("addtomap.species.createspecieslist.enable")?"true":"false"}'/>
