@@ -71,6 +71,7 @@ public final class CommonData {
     private static final String IGNORED_FACETS = "default_facets_ignored";
     private static final String I18N_URL = "i18nURL";
     private static final String I18N_IGNORE_THESE_PREFIXES = "i18nIgnoreThesePrefixes";
+    private static final String BIOCACHE_QUERY_CONTEXT = "biocache_query_context";
     private static final Logger LOGGER = Logger.getLogger(CommonData.class);
     protected static String collectoryServer;
     protected static String[] customFacets;
@@ -110,6 +111,7 @@ public final class CommonData {
     private static JSONArray layerlistJSON = null;
     private static JSONArray copyLayerlistJSON = null;
     private static String defaultFieldString = null;
+    private static String biocacheQueryContext = null;
     /**
      * key = LSID value = list of WMS names
      */
@@ -196,6 +198,8 @@ public final class CommonData {
         } else {
             i18nIgnoredPrefixes = new ArrayList<String>();
         }
+
+        biocacheQueryContext = settings.getProperty(BIOCACHE_QUERY_CONTEXT);
 
         //init language pack (but not everywhere)
         initLanguagePack();
@@ -1103,6 +1107,10 @@ public final class CommonData {
 
     public static String getExtraDownloadFields() {
         return extraDownloadFields;
+    }
+
+    public static String getBiocacheQueryContext() {
+        return biocacheQueryContext;
     }
 
     public static Map getSpeciesListCounts(boolean refresh) {

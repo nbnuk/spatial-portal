@@ -206,6 +206,15 @@ public class BiocacheQuery implements Query, Serializable {
             this.facets = new ArrayList<Facet>(facets.size());
             this.facets.addAll(facets);
         }
+
+        //adds a custom filter for this installation of the spatial portal
+        if(CommonData.getBiocacheQueryContext() != null){
+            if (extraParams == null) {
+                    extraParams = "";
+            }
+            extraParams = extraParams + "&" + CommonData.getBiocacheQueryContext();
+        }
+
         this.wkt = (wkt != null && wkt.equals(CommonData.WORLD_WKT)) ? null : Util.fixWkt(wkt);
         this.extraParams = extraParams;
         this.forMapping = forMapping;
