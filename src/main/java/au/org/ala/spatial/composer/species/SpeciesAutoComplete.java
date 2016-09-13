@@ -4,6 +4,7 @@ import au.org.ala.spatial.StringConstants;
 import au.org.ala.spatial.dto.UserDataDTO;
 import au.org.ala.spatial.util.BiocacheQuery;
 import au.org.ala.spatial.util.CommonData;
+import com.google.gson.JsonArray;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
@@ -122,7 +123,7 @@ public class SpeciesAutoComplete extends Combobox {
 
                 if (aslist.length > 0 && aslist[0].length() > 0) {
 
-                    Arrays.sort(aslist);
+//                    Arrays.sort(aslist);
 
                     for (int i = 0; i < aslist.length; i++) {
                         String[] spVal = aslist[i].split("\\|");
@@ -229,12 +230,12 @@ public class SpeciesAutoComplete extends Combobox {
 
     String searchService(String val) throws Exception {
         //search URL for new BIE
-        String v = val;
+//        String v = val;
+//
+//        //wildcard required for partial one word matches
+//        if (!val.contains(" ")) v = val + "*";
 
-        //wildcard required for partial one word matches
-        if (!val.contains(" ")) v = val + "*";
-
-        String nsurl = CommonData.getBieServer() + "/ws/search.json?pageSize=100&q=" + URLEncoder.encode(v, StringConstants.UTF_8) + "&fq=idxtype:TAXON";
+        String nsurl = CommonData.getBieServer() + "/auto?q=" + URLEncoder.encode(val, StringConstants.UTF_8) + "&fq=idxtype:TAXON";
 
         HttpClient client = new HttpClient();
         GetMethod get = new GetMethod(nsurl);
@@ -246,46 +247,30 @@ public class SpeciesAutoComplete extends Combobox {
         //parse
         JSONParser jp = new JSONParser();
         JSONObject jo = (JSONObject) jp.parse(rawJSON);
-        jo = (JSONObject) jo.get("searchResults");
-
         StringBuilder slist = new StringBuilder();
-        JSONArray ja = (JSONArray) jo.get("results");
+        JSONArray ja = (JSONArray) jo.get("autoCompleteList");
         for (int i = 0; i < ja.size(); i++) {
             JSONObject o = (JSONObject) ja.get(i);
 
             //count for guid
             try {
-                if (o.containsKey(StringConstants.NAME) && o.containsKey("guid") && o.containsKey(StringConstants.RANK)) {
+                if (o.containsKey(StringConstants.NAME) && o.containsKey("guid") && o.containsKey("rankString")) {
                     Integer count = CommonData.getLsidCounts().getCount(o.get("guid").toString());
 
                     if (slist.length() > 0) {
                         slist.append("\n");
                     }
 
-                    String commonName = null;
-                    boolean commonNameMatch = false;
-                    if (o.containsKey("commonName") && !StringConstants.NONE.equals(o.get("commonName"))
-                            && !StringConstants.NULL.equals(o.get("commonName"))) {
-                        commonName = o.get("commonName").toString();
-                        String[] cns = commonName.split(",");
-                        for (int j = 0; j < cns.length; j++) {
-                            if (cns[j].toLowerCase().contains(val)) {
-                                commonName = cns[j];
-                                commonNameMatch = true;
-                                break;
-                            }
-                        }
-                        if (commonName.indexOf(',') > 1) {
-                            commonName = commonName.substring(0, commonName.indexOf(','));
-                        }
-                    }
+                    org.json.simple.JSONArray commonNameMatches  = (org.json.simple.JSONArray) o.get("commonNameMatches");
+                    boolean commonNameMatch = commonNameMatches.size() > 0;
+                    String commonName = (String) o.get("commonName");
 
                     //macaca / urn:lsid:catalogueoflife.org:taxon:d84852d0-29c1-102b-9a4a-00304854f820:ac2010 / genus / found 17
                     //swap name and common name if it is a common name match
                     if (commonNameMatch) {
                         slist.append(commonName).append(" |");
                         slist.append(o.get("guid")).append("|");
-                        slist.append(o.get(StringConstants.RANK));
+                        slist.append(o.get(StringConstants.RANKSTRING));
                         slist.append(", ").append(o.get(StringConstants.NAME).toString().replace("|", ","));
                         slist.append("|");
                         if (count != null) {
@@ -297,7 +282,7 @@ public class SpeciesAutoComplete extends Combobox {
                     } else {
                         slist.append(o.get(StringConstants.NAME).toString().replace("|", ",")).append(" |");
                         slist.append(o.get("guid")).append("|");
-                        slist.append(o.get(StringConstants.RANK));
+                        slist.append(o.get(StringConstants.RANKSTRING));
                         if (commonName != null) {
                             slist.append(", ").append(commonName);
                         }

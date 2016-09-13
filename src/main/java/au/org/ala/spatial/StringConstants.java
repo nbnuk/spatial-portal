@@ -46,6 +46,7 @@ public final class StringConstants {
     public static final String FAMILY = "family";
     public static final String KINGDOM = "kingdom";
     public static final String RANK = "rank";
+    public static final String RANKSTRING = "rankString";
     public static final String PARENT = "parent";
     public static final String CONTEXTUAL = "contextual";
     public static final String DISPLAYNAME = "displayname";

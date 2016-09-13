@@ -6,8 +6,11 @@
 <?component name="footer" macro-uri="/WEB-INF/zul/footer.zul"?>
 <?component name="contextualMenu" macro-uri="/WEB-INF/zul/quicklinks/ContextualMenu.zul"?>
 
-<?page id="MapZul" title="Spatial portal | Atlas of Living Australia" cacheable="false" contentType="text/html;charset=UTF-8"?>
-<?link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico"?>
+<?page id="MapZul" title="Analyse data | Atlas of Living Scotland" cacheable="false" contentType="text/html;charset=UTF-8"?>
+
+<?link rel="icon" href="http://www.als.scot/wp-content/uploads/2016/05/cropped-ALS-a-06-1-32x32.png" sizes="32x32" ?>
+<?link rel="icon" href="http://www.als.scot/wp-content/uploads/2016/05/cropped-ALS-a-06-1-192x192.png" sizes="192x192" ?>
+<?link rel="apple-touch-icon-precomposed" href="http://www.als.scot/wp-content/uploads/2016/05/cropped-ALS-a-06-1-180x180.png" ?>
 
 <?style href="css/jquery.autocomplete.css" type="text/css" ?>
 <?style href="css/bootstrap.min.css" type="text/css" ?>
@@ -20,7 +23,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.zkoss.org/2005/zul http://www.zkoss.org/2005/zul/zul.xsd"
     xmlns:n="http://www.zkoss.org/2005/zk/native">
-  
+
     <script defer="false" type="text/javascript">
         var mapLayers = null;
         var currFeature = null;
@@ -42,16 +45,16 @@
 
     <style>
 
-    body {
+        body {
         padding:0;border:0;
         background-color: #FFFEF7;
-    }
+        }
 
-    .z-window-content {
+        .z-window-content {
         padding:0;border:0;
-    }
+        }
 
-    .z-row-content, .z-group-content, .z-groupfoot-content, .z-footer-content {
+        .z-row-content, .z-group-content, .z-groupfoot-content, .z-footer-content {
         font-size: 12px;
         font-weight: 400;
         font-style: normal;
@@ -59,9 +62,9 @@
         padding:0px;
         line-height: 24px;
         overflow: auto;
-    }
+        }
 
-    			</style>
+    </style>
 
 
     <window id="mapPortalPage" width="100%" height="100%"
@@ -76,235 +79,235 @@
             _gaq.push(['_trackPageview']);
 
             (function() {
-                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
             })();
         </script>
         <script defer="true" type="text/JavaScript" src="scripts/index.js" />
 
-<timer id="timerKeepAliveSession" repeats="true" delay="30000" onTimer="" />
+        <timer id="timerKeepAliveSession" repeats="true" delay="30000" onTimer="" />
 
         <div id="menucontainer">
             <div width="400px" id="menudiv" sclass="menudiv" height="39px" style="position:absolute; top:51px">
 
-            <style>
-                #nav-site_old .navbar-inner_old .nav_old > li > a {
+                <style>
+                    #nav-site_old .navbar-inner_old .nav_old > li > a {
                     padding-left:8px;
                     padding-right:8px;
-                }
-                #nav-site_old .navbar-inner_old {
+                    }
+                    #nav-site_old .navbar-inner_old {
                     padding-left:0px;
                     padding-right:0px;
                     border: 0px;
-                }
-                #nav-site_old .navbar-inner_old .nav_old > li > a {
-                  background-color: #DF4A21;
-                  border-left: 1px solid #DF4A21;
-                  border-right: 1px solid #DF4A21;
-                  border-collapse: collapse;
-                  color: #FFF;
-                  -webkit-box-shadow: none;
-                  -moz-box-shadow: none;
-                  box-shadow: none;
-                  text-shadow: none;
-                  font-size: 14px;
-                  padding: 9px 8px 7px;
-                  margin-right: -1px;
-                }
+                    }
+                    #nav-site_old .navbar-inner_old .nav_old > li > a {
+                    background-color: #575756;
+                    border-left: 1px solid #575756;
+                    border-right: 1px solid #575756;
+                    border-collapse: collapse;
+                    color: #FFF;
+                    -webkit-box-shadow: none;
+                    -moz-box-shadow: none;
+                    box-shadow: none;
+                    text-shadow: none;
+                    font-size: 14px;
+                    padding: 9px 8px 7px;
+                    margin-right: -1px;
+                    }
 
-                .navbar_old .nav_old > li > a {
-                  float: none;
-                  padding: 10px 15px 10px;
-                  color: #777;
-                  text-decoration: none;
-                  text-shadow: 0 1px 0 #FFF;
-                }
+                    .navbar_old .nav_old > li > a {
+                    float: none;
+                    padding: 10px 15px 10px;
+                    color: #777;
+                    text-decoration: none;
+                    text-shadow: 0 1px 0 #FFF;
+                    }
 
-                .nav_old > li > a {
-                  display: block;
-                }
+                    .nav_old > li > a {
+                    display: block;
+                    }
 
-                .nav_old {
-                  position: relative;
-                  left: 0;
-                  display: block;
-                  float: left;
-                  margin: 0 10px 0 0;
-                }
+                    .nav_old {
+                    position: relative;
+                    left: 0;
+                    display: block;
+                    float: left;
+                    margin: 0 10px 0 0;
+                    }
 
-                .dropdown_old {
+                    .dropdown_old {
                     float: left;
                     position: relative;
                     display: block;
-                }
+                    }
 
-            </style>
-            <n:div n:id="nav-site_old" n:class="navbar_old" n:style="margin-bottom: 0px;
+                </style>
+                <n:div n:id="nav-site_old" n:class="navbar_old" n:style="margin-bottom: 0px;
                                                                  min-height: 38px;
                                                                  border: 0px;
                                                                  z-index: 200;
                                                                  overflow: visible;
                                                                  position: relative;
-                                                                 background-color: #DF4A21;">
-            <n:div n:class="navbar-inner_old">
-                    <n:ul n:class="nav_old">
-                        <n:li n:class="dropdown dropdown_old" >
-                            <n:a n:class="dropdown-dropdown-toggle" n:data-toggle="dropdown" n:onClick="doNothing();" >Add to Map  <n:b n:class="caret" /></n:a>
-                            <n:ul n:class="dropdown-menu">
-                                <n:li>
-                                    <n:a href="#" n:onClick="addSpeciesAction();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("addtomap.species.enable")?"":"display:none"}'>Species</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="addAreaAction();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("addtomap.areas.enable")?"":"display:none"}'>Areas</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="addLayerAction();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("addtomap.layers.enable")?"":"display:none"}'>Layers</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="addFacetAction();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("addtomap.facet.enable")?"":"display:none"}'>Facet</n:a>
-                                </n:li>
-                                <!-- <n:li>
-                                    <a href="#" onClick="test_internal_error();">Error testing</a>
-                                </n:li> -->
-                            </n:ul>
-                        </n:li>
-                        <n:li n:class="dropdown dropdown_old">
-                            <n:a n:class="dropdown-dropdown-toggle" n:data-toggle="dropdown"  n:onClick="doNothing();" >Tools <n:b n:class="caret" /></n:a>
-                            <n:ul n:class="dropdown-menu">
-                                <n:li>
-                                    <n:a href="#" n:onClick="runAreaReport();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.areareport.enable")?"":"display:none"}'>Area Report</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runInOut();"
-                                         n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.inout.enable")?"":"display:none"}'>
-                                        In Out Report
-                                    </n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runAreaReportPDF();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.detailedareareport.enable")?"":"display:none"}'>Detailed Area Report (PDF)</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runAooEoo();"
-                                         n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.aooeoo.enable")?"":"display:none"}'>
-                                        Calculate AOO and EOO
-                                    </n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runNearestLocality();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.nearestlocality.enable")?"":"display:none"}'>Nearest locality</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runPointComparisons();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.pointcomparisons.enable")?"":"display:none"}'>Points comparisons</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runScatterPlot();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.scatterplot.enable")?"":"display:none"}'>Scatterplot</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runScatterPlotList();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.scatterplotlist.enable")?"":"display:none"}'>Scatterplot List</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runTabulation();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.tabulation.enable")?"":"display:none"}'>Tabulate</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runInOut();"
-                                         n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.inout.enable")?"":"display:none"}'>
-                                        Compare Areas
-                                    </n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runSitesBySpecies();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.pointstogrid.enable")?"":"display:none"}'>Points to Grid</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runGeneratePoints();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.generatepoints.enable")?"":"display:none"}'>Generate Points</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runPhylogeneticDiversity();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.phylogeneticdiversity.enable")?"":"display:none"}'>Phylogenetic Diversity</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runClassification();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.predict.enable")?"":"display:none"}'>Classify</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runPrediction();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.classify.enable")?"":"display:none"}'>Predict</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runGDM();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.gdm.enable")?"":"display:none"}'>GDM</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runImportAnalysis();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.restoreprioranalysis.enable")?"":"display:none"}'>Restore prior analysis</n:a>
-                                </n:li>
-                            </n:ul>
-                        </n:li>
-                        <n:li n:class="dropdown dropdown_old">
-                            <n:a n:class="dropdown-dropdown-toggle" n:data-toggle="dropdown" n:onClick="doNothing();" >Import <n:b n:class="caret" /></n:a>
-                            <n:ul n:class="dropdown-menu">
-                                <n:li>
-                                    <n:a href="#" n:onClick="runImportSpecies('points');" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("import.points.enable")?"":"display:none"}'>Points</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runImportSpecies('assemblage');" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("import.specieslist.enable")?"":"display:none"}'>Species list</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runImportAreas();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("import.areas.enable")?"":"display:none"}'>Areas</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runImportAnalysis();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("import.restoreprioranalysis.enable")?"":"display:none"}'>Restore prior analysis</n:a>
-                                </n:li>
-                            </n:ul>
-                        </n:li>
-                        <n:li n:class="dropdown dropdown_old">
-                            <n:a n:class="dropdown-dropdown-toggle" n:data-toggle="dropdown" n:onClick="doNothing();"  >Export <n:b n:class="caret" /></n:a>
-                            <n:ul n:class="dropdown-menu">
-                                <n:li>
-                                    <n:a href="#" n:onClick='printHack();' n:style='${mapPortalPage.getSettingsSupplementary().getProperty("export.map.enable")?"":"display:none"}'>Map</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runSpeciesList();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("export.checklist.enable")?"":"display:none"}'>Checklist</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runSamplingAction();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("export.pointsample.enable")?"":"display:none"}'>Point Sample</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a href="#" n:onClick="runExport();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("export.areas.enable")?"":"display:none"}'>Areas</n:a>
-                                </n:li>
-                            </n:ul>
-                        </n:li>
-                        <n:li n:class="dropdown dropdown_old">
-                            <n:a n:class="dropdown-dropdown-toggle" n:data-toggle="dropdown"  n:onClick="doNothing();" >Help <n:b n:class="caret" /></n:a>
-                            <n:ul class="dropdown-menu" n:style="margin-left:-100px">
-                                <n:li>
-                                    <n:a n:href="${mapPortalPage.getSettingsSupplementary().getProperty('help_url')}/spatial-portal-help/getting-started" n:target="_blank">Getting Started</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a n:href="${mapPortalPage.getSettingsSupplementary().getProperty('help_url')}/spatial-portal-help/add-to-map" n:target="_blank">Add To Map</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a n:href="${mapPortalPage.getSettingsSupplementary().getProperty('help_url')}/spatial-portal-help/tools" n:target="_blank">Tools</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a n:href="${mapPortalPage.getSettingsSupplementary().getProperty('help_url')}/spatial-portal-help/import" n:target="_blank">Import</n:a>
-                                </n:li>
-                                <n:li>
-                                    <n:a n:href="${mapPortalPage.getSettingsSupplementary().getProperty('help_url')}/spatial-portal-help/export" n:target="_blank">Export</n:a>
-                                </n:li>
-                            </n:ul>
-                        </n:li>
-                    </n:ul>
+                                                                 background-color: #575756;">
+                    <n:div n:class="navbar-inner_old">
+                        <n:ul n:class="nav_old">
+                            <n:li n:class="dropdown dropdown_old" >
+                                <n:a n:class="dropdown-dropdown-toggle" n:data-toggle="dropdown" n:onClick="doNothing();" >Add to Map  <n:b n:class="caret" /></n:a>
+                                <n:ul n:class="dropdown-menu">
+                                    <n:li>
+                                        <n:a href="#" n:onClick="addSpeciesAction();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("addtomap.species.enable")?"":"display:none"}'>Species</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="addAreaAction();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("addtomap.areas.enable")?"":"display:none"}'>Areas</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="addLayerAction();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("addtomap.layers.enable")?"":"display:none"}'>Layers</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="addFacetAction();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("addtomap.facet.enable")?"":"display:none"}'>Facet</n:a>
+                                    </n:li>
+                                    <!-- <n:li>
+                                        <a href="#" onClick="test_internal_error();">Error testing</a>
+                                    </n:li> -->
+                                </n:ul>
+                            </n:li>
+                            <n:li n:class="dropdown dropdown_old">
+                                <n:a n:class="dropdown-dropdown-toggle" n:data-toggle="dropdown"  n:onClick="doNothing();" >Tools <n:b n:class="caret" /></n:a>
+                                <n:ul n:class="dropdown-menu">
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runAreaReport();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.areareport.enable")?"":"display:none"}'>Area Report</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runInOut();"
+                                             n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.inout.enable")?"":"display:none"}'>
+                                            In Out Report
+                                        </n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runAreaReportPDF();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.detailedareareport.enable")?"":"display:none"}'>Detailed Area Report (PDF)</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runAooEoo();"
+                                             n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.aooeoo.enable")?"":"display:none"}'>
+                                            Calculate AOO and EOO
+                                        </n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runNearestLocality();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.nearestlocality.enable")?"":"display:none"}'>Nearest locality</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runPointComparisons();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.pointcomparisons.enable")?"":"display:none"}'>Points comparisons</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runScatterPlot();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.scatterplot.enable")?"":"display:none"}'>Scatterplot</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runScatterPlotList();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.scatterplotlist.enable")?"":"display:none"}'>Scatterplot List</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runTabulation();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.tabulation.enable")?"":"display:none"}'>Tabulate</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runSitesBySpecies();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.pointstogrid.enable")?"":"display:none"}'>Points to Grid</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runGeneratePoints();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.generatepoints.enable")?"":"display:none"}'>Generate Points</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runPhylogeneticDiversity();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.phylogeneticdiversity.enable")?"":"display:none"}'>Phylogenetic Diversity</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runClassification();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.predict.enable")?"":"display:none"}'>Classify</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runPrediction();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.classify.enable")?"":"display:none"}'>Predict</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runGDM();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.gdm.enable")?"":"display:none"}'>GDM</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runImportAnalysis();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.restoreprioranalysis.enable")?"":"display:none"}'>Restore prior analysis</n:a>
+                                    </n:li>
+                                </n:ul>
+                            </n:li>
+                            <n:li n:class="dropdown dropdown_old">
+                                <n:a n:class="dropdown-dropdown-toggle" n:data-toggle="dropdown" n:onClick="doNothing();" >Import <n:b n:class="caret" /></n:a>
+                                <n:ul n:class="dropdown-menu">
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runImportSpecies('points');" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("import.points.enable")?"":"display:none"}'>Points</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runImportSpecies('assemblage');" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("import.specieslist.enable")?"":"display:none"}'>Species list</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runImportAreas();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("import.areas.enable")?"":"display:none"}'>Areas</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runImportAnalysis();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("import.restoreprioranalysis.enable")?"":"display:none"}'>Restore prior analysis</n:a>
+                                    </n:li>
+                                </n:ul>
+                            </n:li>
+                            <n:li n:class="dropdown dropdown_old">
+                                <n:a n:class="dropdown-dropdown-toggle" n:data-toggle="dropdown" n:onClick="doNothing();"  >Export <n:b n:class="caret" /></n:a>
+                                <n:ul n:class="dropdown-menu">
+                                    <n:li>
+                                        <n:a href="#" n:onClick='printHack();' n:style='${mapPortalPage.getSettingsSupplementary().getProperty("export.map.enable")?"":"display:none"}'>Map</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runSpeciesList();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("export.checklist.enable")?"":"display:none"}'>Checklist</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runSamplingAction();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("export.pointsample.enable")?"":"display:none"}'>Point Sample</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a href="#" n:onClick="runExport();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("export.areas.enable")?"":"display:none"}'>Areas</n:a>
+                                    </n:li>
+                                </n:ul>
+                            </n:li>
+                            <n:li n:class="dropdown dropdown_old">
+                                <n:a n:class="dropdown-dropdown-toggle" n:data-toggle="dropdown"  n:onClick="doNothing();" >Help <n:b n:class="caret" /></n:a>
+                                <n:ul class="dropdown-menu" n:style="margin-left:-100px">
+                                    <n:li>
+                                        <n:a n:href="${mapPortalPage.getSettingsSupplementary().getProperty('help_url')}/spatial-portal-help/getting-started" n:target="_blank">Getting Started</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a n:href="${mapPortalPage.getSettingsSupplementary().getProperty('help_url')}/spatial-portal-help/add-to-map" n:target="_blank">Add To Map</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a n:href="${mapPortalPage.getSettingsSupplementary().getProperty('help_url')}/spatial-portal-help/tools" n:target="_blank">Tools</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a n:href="${mapPortalPage.getSettingsSupplementary().getProperty('help_url')}/spatial-portal-help/import" n:target="_blank">Import</n:a>
+                                    </n:li>
+                                    <n:li>
+                                        <n:a n:href="${mapPortalPage.getSettingsSupplementary().getProperty('help_url')}/spatial-portal-help/export" n:target="_blank">Export</n:a>
+                                    </n:li>
+                                </n:ul>
+                            </n:li>
+                        </n:ul>
                     </n:div>
                 </n:div>
 
-                <div style="position: absolute; z-index: 201; left: 380px; top: 0px; width:20px; height:38px; background-color: #df4a21;color:white" >
+                <div style="position: absolute; z-index: 201; left: 380px; top: 0px; width:20px; height:38px; background-color: #575756;color:white" >
                     <div onClick='menus.setOpen(false);menudiv.setStyle("position:absolute; top:0px");menudiv.setParent(menucontainerwest);'
-                        sclass="z-borderlayout-icon z-icon-chevron-left"
-                        style="padding-left:9px;line-height:39px">
+                         sclass="z-borderlayout-icon z-icon-chevron-left"
+                         style="padding-left:9px;line-height:39px">
                     </div>
                 </div>
             </div>
         </div>
 
         <html style="position:absolute">
-                        <![CDATA[
+            <![CDATA[
 
-                        <!-- Header -->
+                        <style>
+                        .navbar-primary { background-color: rgba(0,0,0,.7); }
+                        .navbar-inner img.brand { max-height: 25px; }
+                        div.navbar.navbar-inverse.navbar-fixed-top div div { margin-left: 10px; }
+                        .fancybox-close { display:none; }
+                        </style>
+
                         <!-- Navbar -->
                         <div class="navbar navbar-inverse navbar-fixed-top">
                             <div class="navbar-inner">
@@ -314,67 +317,12 @@
                                         <span class="icon-bar"></span>
                                         <span class="icon-bar"></span>
                                     </button>
-                                    <a class="navbar-brand" href="http://www.ala.org.au">
-                                        <img alt="brand" class="brand img-responsive" src="http://www2.ala.org.au/commonui-bs2/images/supporting-graphic-element-flat.png">
+                                    <a class="navbar-brand" href="http://www.als.scot">
+                                        <img alt="brand" class="brand img-responsive" src="http://www.als.scot/wp-content/themes/atlas-sco/dist/images/logo.png">
                                     </a>
-                                    <a class="brand" href="http://www.ala.org.au">
-                                        The Atlas Of Living Australia
-                                    </a>
+
                                     <div class="nav-collapse collapse">
-                                        <ul class="nav">
-                                            <li>
-                                                <a href="http://www.ala.org.au/about-the-atlas/contact-us/">Contact us</a>
-                                            </li>
-                                            <li>
-                                                <a href="http://www.ala.org.au/get-involved/">Get involved</a>
-                                            </li>
-                                            <li class="dropdown font-xsmall">
-                                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-                                                    ALA Apps
-                                                    <span class="caret"></span>
-                                                </a>
-                                                    <ul class="dropdown-menu" role="menu">
-                                                        <li><a href="http://spatial.ala.org.au">Spatial portal</a></li>
-                                                        <li ><a href="http://biocache.ala.org.au">Occurrence search</a></li>
-                                                        <li ><a href="http://fish.ala.org.au">Fish map</a></li>
-                                                        <li ><a href="http://regions.ala.org.au">Regions</a></li>
-                                                        <li ><a href="http://biocache.ala.org.au/explore/your-area">Explore your area</a></li>
 
-                                                        <li class="divider"></li>
-                                                        <li><a href="http://sightings.ala.org.au">Record a sighting</a></li>
-                                                        <li><a href="http://collections.ala.org.au">Collections</a></li>
-                                                        <li><a href="http://volunteer.ala.org.au">DigiVol</a></li>
-                                                        <li><a href="http://fieldcapture.ala.org.au">Fieldcapture</a></li>
-                                                        <li><a href="http://www.soils2satellites.org.au/">Soils to satellite</a></li>
-                                                        <li><a href="http://lists.ala.org.au">Traits, species lists</a></li>
-
-                                                        <li class="divider"></li>
-                                                        <li><a href="http://root.ala.org.au">Community portals</a></li>
-                                                        <li><a href="http://dashboard.ala.org.au">Dashboard</a></li>
-                                                        <li><a href="http://collections.ala.org.au/datasets">Datasets browser</a></li>
-                                                    </ul>
-                                            </li>
-                                        </ul>
-                                        <ul class="nav pull-right">
-                                            <li><a href="javascript:saveSession();" title="Save current session">Save session</a>
-                                            </li>
-                                            <li class="dropdown font-xsmall">
-                                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-                                                    User settings
-                                                    <span class="caret"></span>
-                                                </a>
-                                                <ul class="dropdown-menu" role="menu">
-                                                    <li><a href="http://auth.ala.org.au/userdetails/myprofile">My profile</a></li>
-                                                    <li class="divider"></li>
-                                                    <li><a href='https://auth.ala.org.au/cas/login?service=http://spatial.ala.org.au/webportal//' class='null'><span>Log in</span></a></li>
-                                                    <li><a href="https://auth.ala.org.au/userdetails/registration/createAccount">Register</a></li>
-                                                </ul>
-                                            </li>
-                                        </ul>
-                                        <form class="navbar-form" role="search" action="http://bie.ala.org.au/search" method="get">
-                                            <input type="text" class="general-search ac_input form-control " name="q" placeholder="Search the Atlas" >
-                                            <button type="submit" class="btn btn-primary">Search</button>
-                                        </form>
                                     </div><!-- /.nav-collapse -->
                                 </div><!-- /.container -->
                             </div><!-- /.navbar-inner -->
@@ -382,25 +330,25 @@
 
                         <!-- End header -->
 
-                        ]]>
-                        </html>
+            ]]>
+        </html>
 
         <borderlayout width="100%" height="100%">
             <north id="header" height="51" visible="true" style="height: 51px;width:100%">
 
             </north>
             <west title=" "
-                   id="menus" collapsible="true"
-                   splittable="false" width="400px">
+                  id="menus" collapsible="true"
+                  splittable="false" width="400px">
                 <div id="westChild" vflex="1">
                     <div id="westMinimised" visible="false" class="westMinimised" >
                         <div zclass="closebox" zindex="500" left="2px" top="2px">
                             <toolbarbutton
-                            id="showLeftMenu"
-                            label=""
-                            image="img/buttonopen.png"
-                            hoverImage="img/buttonopen-over.png"
-                            visible="false"
+                                    id="showLeftMenu"
+                                    label=""
+                                    image="img/buttonopen.png"
+                                    hoverImage="img/buttonopen-over.png"
+                                    visible="false"
                             />
                         </div>
                     </div>
@@ -408,16 +356,16 @@
                     <div id="westContent" class="westContent" visible="true" height="100%">
                         <borderlayout style="position:absolute;top:0px;left:0px">
                             <north height="189px">
-                            <div width="400px">
+                                <div width="400px">
 
-                                                        <div height="38px" />
+                                    <div height="38px" />
                                     <div id="activeLayersHolder" width="400px" style="overflow: auto;background:#FFFEF7" height="160px">
                                         <listbox id="activeLayersList" width="100%"/>
                                         <separator />
                                         <separator />
                                     </div>
                                     <div width="100%" height="1px" sclass="selectedLayerDiv" />
-                                    </div>
+                                </div>
                             </north>
                             <center vflex="false">
                                 <vlayout height="100%" style="overflow-y: auto;border-style:solid;border-width:1px 0px 0px 0px;border-color: gray" >
@@ -425,7 +373,7 @@
                 font-size: 14px;
                 color: rgb(172, 172, 172);;
                 padding: 3px 3px 3px 3px;">
-                                       <label id="lblSelectedLayer" value="No layers added" sclass="selectedLayer" />
+                                        <label id="lblSelectedLayer" value="No layers added" sclass="selectedLayer" />
                                     </div>
                                     <separator />
                                     <div  id="layerControls"/>
@@ -445,7 +393,7 @@
                     <div style="float:left" width="100%" height="100%" >
                         <iframe id="mapIframe" width="100%" height="100%" name="mapFrame" src="./map2.html?" />
                         <div sclass="contextualDivMenu" zclass="contextualDiv" id="contextualDivMenu" >
-                                    <contextualMenu id="contextualMenu" style='display: block; padding: 3px;
+                            <contextualMenu id="contextualMenu" style='display: block; padding: 3px;
                                                                                            opacity: 0.9;
                                                                                            z-index: 410;
                                                                                            background-color: #3C668D;
@@ -454,7 +402,7 @@
                                                                                            font-family: Roboto,Helvetica,"Helvetica Neue",Arial,sans-serif;
                                                                                            font-size: x-small;
                                                                                            ' />
-                                </div>
+                        </div>
                     </div>
                 </div>
             </center>
@@ -478,7 +426,7 @@
                 zAu.send(new zk.Event(zk.Widget.$(jq('$mapPortalPage')[0]), 'onLayerLoaded', layerName));
             }
 
-            map.baseLayer.redraw(); 
+            map.baseLayer.redraw();
         };
 
         ]]>
@@ -505,7 +453,7 @@
 
         <textbox id="baseMap" visible="false" />
         <textbox id="currentLayerExtent" visible="false" />
-        
+
         <label id="sat_url" visible="false" />
         <label id="geoserver_url" visible="false" />
         <label id="layers_url" visible="false" />
@@ -534,7 +482,7 @@
             phylolist_url.setValue(mapPortalPage.getSettingsSupplementary().getProperty("phylolist_url"));
             sandbox_url.setValue(mapPortalPage.getSettingsSupplementary().getProperty("sandbox.url"));
             gaz_layer.setValue(mapPortalPage.getSettingsSupplementary().getProperty("area_report_gaz_field"));
-</zscript>
+        </zscript>
 
 
         <script><![CDATA[
@@ -586,10 +534,10 @@ function readCookie(name) {
     return null;
 }
               ]]>
-              
+
         </script>
         <window id="hovertool" border="normal" sizable="true" visible="false"
-                 xmlns:n="http://www.zkoss.org/2005/zk/native" mode="overlapped" width="450px" height="120px" position="center,top">
+                xmlns:n="http://www.zkoss.org/2005/zk/native" mode="overlapped" width="450px" height="120px" position="center,top">
             <n:a class="fancybox-close" n:onClick="mapFrame.doSome('min');" style="display: inline" />
             <caption label="Layer value hover tool" />
             <div height="100%" style="background:#FFFEF7">
@@ -597,7 +545,7 @@ function readCookie(name) {
             </div>
         </window>
         <window id="nearesttool" border="normal" sizable="true" visible="false"
-                 xmlns:n="http://www.zkoss.org/2005/zk/native" mode="overlapped" width="400px" height="120px" position="center,top">
+                xmlns:n="http://www.zkoss.org/2005/zk/native" mode="overlapped" width="400px" height="120px" position="center,top">
             <n:a class="fancybox-close" n:onClick="clearNearestMarkerLayer();mapFrame.toggleActiveNearest();" style="display: inline" />
             <caption label="Nearest locality tool">
                 <n:a href='#' n:onClick="clearNearestMarkerLayer();">
@@ -609,7 +557,7 @@ function readCookie(name) {
             </div>
         </window>
         <window id="featuretool" border="normal" sizable="true" visible="false"
-                 xmlns:n="http://www.zkoss.org/2005/zk/native" mode="overlapped" width="400px" height="120px" position="center,top">
+                xmlns:n="http://www.zkoss.org/2005/zk/native" mode="overlapped" width="400px" height="120px" position="center,top">
             <n:a class="fancybox-close" n:onClick="clearNearestMarkerLayer();mapFrame.toggleActiveFeatures();" style="display: inline" />
             <caption label="Mapped features">
                 <n:a href='#' n:onClick="clearNearestMarkerLayer();mapFrame.toggleActiveFeatures();">
@@ -636,13 +584,12 @@ function readCookie(name) {
 
     </window>
 
-    
 
 
-<script defer="true" src="scripts/jquery-migrate-1.2.1.min.js" ></script>
-<script defer="true" src="scripts/jquery.autocomplete.js"   ></script>
-<script defer="true" src="scripts/application.js"  ></script>
-<script defer="true" src="scripts/bootstrap.js"  ></script>
-   
+
+    <script defer="true" src="scripts/jquery-migrate-1.2.1.min.js" ></script>
+    <script defer="true" src="scripts/jquery.autocomplete.js"   ></script>
+    <script defer="true" src="scripts/application.js"  ></script>
+    <script defer="true" src="scripts/bootstrap.js"  ></script>
+
 </zk>
-
