@@ -88,6 +88,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
     private MapLayer llc2MapLayer;
     private Query downloadSecondQuery = null;
     private String[] downloadSecondLayers = null;
+    private String[] downloadSecondLayersDN = null;
     private Listbox activeLayersList;
     private ActiveLayerRenderer activeLayerRenderer = null;
     private HtmlMacroComponent contextualMenu;
@@ -849,22 +850,46 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
         }
         //add feature to the map as a new layer
         String areaName = obj.get(StringConstants.NAME).toString();
-        MapLayer mapLayer = getMapComposer().addWMSLayer("PID:" + pid, displayName == null ? areaName : displayName
-                , obj.get(StringConstants.WMSURL).toString(), 0.6f, null, null, LayerUtilitiesImpl.WKT, null, null);
+
+        MapLayer mapLayer = null;
+        boolean pointLayer = false;
+        try {
+            List<Double> dbb = Util.getBoundingBox(obj.get(StringConstants.BBOX).toString());
+
+            //if the layer is a point create a radius
+            if (dbb.get(0).floatValue() == dbb.get(2).floatValue() && dbb.get(1).floatValue() == dbb.get(3).floatValue()) {
+
+                double radius = radiusKm * 1000.0;
+
+                String wkt = Util.createCircleJs(dbb.get(0).floatValue(), dbb.get(1).floatValue(), radius);
+
+                mapLayer = getMapComposer().addWKTLayer(wkt, displayName, displayName);
+
+                pointLayer = true;
+            }
+        } catch (Exception e) {
+        }
+
+        if (mapLayer == null) {
+            //not a point layer
+            mapLayer = getMapComposer().addWMSLayer("PID:" + pid, displayName == null ? areaName : displayName
+                    , obj.get(StringConstants.WMSURL).toString(), 0.6f, null, null, LayerUtilitiesImpl.WKT, null, null);
+            mapLayer.setAreaSqKm(obj.get(StringConstants.AREA_KM).toString());
+        }
+
         if (mapLayer == null) {
             return null;
         }
+        mapLayer.setPid(pid);
         mapLayer.setPolygonLayer(true);
 
         //if the layer is a point create a radius
-
-        String bbox = obj.get(StringConstants.BBOX).toString();
         String fid = obj.get(StringConstants.FID).toString();
 
         MapLayerMetadata md = mapLayer.getMapLayerMetadata();
 
         Facet facet = null;
-        if (CommonData.getLayer(fid) != null && CommonData.getFacetLayerNameDefault(fid) != null) {
+        if (!pointLayer && CommonData.getLayer(fid) != null && CommonData.getFacetLayerNameDefault(fid) != null) {
             JSONObject field = CommonData.getLayer(fid);
 
             if (field.containsKey("indb") && StringConstants.TRUE.equalsIgnoreCase(field.get("indb").toString())) {
@@ -873,33 +898,6 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
 
                 facet = Util.getFacetForObject(areaName, fid);
             }
-        }
-
-        try {
-            List<Double> dbb = Util.getBoundingBox(obj.get(StringConstants.BBOX).toString());
-
-            //if the layer is a point create a radius
-            boolean point = false;
-            if (dbb.get(0).floatValue() == dbb.get(2).floatValue() && (float) dbb.get(1).floatValue() == dbb.get(3).floatValue()) {
-                point = true;
-
-                mapLayer.setWKT("POINT(" + dbb.get(0).floatValue() + " " + dbb.get(1).floatValue() + ")");
-
-                double radius = radiusKm * 1000.0;
-
-                String wkt = Util.createCircleJs(dbb.get(0).floatValue(), dbb.get(1).floatValue(), radius);
-                getMapComposer().removeLayer(displayName);
-                mapLayer = getMapComposer().addWKTLayer(wkt, displayName, displayName);
-
-                //redo bounding box
-                dbb = Util.getBoundingBox(wkt);
-            }
-            
-            md.setBbox(dbb);
-
-            mapLayer.setAreaSqKm(obj.get(StringConstants.AREA_KM).toString());
-        } catch (Exception e) {
-            LOGGER.debug("failed to parse: " + bbox, e);
         }
 
         if (facet != null) {
@@ -911,7 +909,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
             if (!((JSONObject) CommonData.getLayer(fid).get("layer")).get("path_orig").toString().contains("diva")) {
                 mapLayer.setWktUrl(CommonData.getLayersServer() + "/shape/wkt/" + pid);
             }
-        } else {
+        } else if (!pointLayer) {
             //not in biocache, so add as WKT
             mapLayer.setWKT(Util.readUrl(CommonData.getLayersServer() + "/shape/wkt/" + pid));
         }
@@ -964,7 +962,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
                 mapLayer.setCql(cqlfilter);
                 mapLayer.setEnvParams(envParams);
 
-                String fieldId = mapLayer.getUri().replaceAll("^.*&style=", "").replaceAll("&.*", "").replaceAll("_style", "");
+                String fieldId = mapLayer.getUri().replaceAll("^.*&styles=", "").replaceAll("&.*", "").replaceAll("_style", "");
 
                 String newUri = CommonData.getGeoServer()
                         + "/wms?REQUEST=GetLegendGraphic&VERSION=1.0.0&FORMAT=image/png&WIDTH=20&HEIGHT=9&LAYER="
@@ -1273,7 +1271,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
                     JSONObject field = (JSONObject) layerlist.get(j);
                     JSONObject layer = (JSONObject) field.get("layer");
                     String name = field.get(StringConstants.ID).toString();
-                    if (name.equalsIgnoreCase(s)) {
+                    if (name.equalsIgnoreCase(s) || s.equalsIgnoreCase(layer.get("name").toString())) {
                         String fieldId = field.get(StringConstants.ID).toString();
                         String uid = layer.get(StringConstants.ID).toString();
                         String type = layer.get(StringConstants.TYPE).toString();
@@ -1416,7 +1414,9 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
                         sb.append("&").append(key).append("=").append(value);
                     }
                 } else if ("qc".equals(key)) {
-                    qc = "&qc=" + URLEncoder.encode(value, StringConstants.UTF_8);
+                    if (StringUtils.isNotEmpty(qc)) {
+                        qc = "&qc=" + URLEncoder.encode(value, StringConstants.UTF_8);
+                    }
                 } else if ("bs".equals(key)) {
                     bs = value;
                 } else if ("ws".equals(key)) {
@@ -2490,7 +2490,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
     }
 
     public void loadScatterplot(ScatterplotDataDTO data, String lyrName) {
-        MapLayer ml = mapSpecies(data.getQuery(), data.getSpeciesName(), StringConstants.SPECIES, 0
+        MapLayer ml = mapSpecies(data.getQuery(), lyrName, StringConstants.SPECIES, 0
                 , LayerUtilitiesImpl.SCATTERPLOT, null,
                 0, DEFAULT_POINT_SIZE, DEFAULT_POINT_OPACITY, Util.nextColour(), false);
         ml.setDisplayName(lyrName);
@@ -3285,7 +3285,18 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
     }
 
     public void downloadSecond(Event event) {
-        SamplingDownloadUtil.downloadSecond(this, downloadSecondQuery, downloadSecondLayers);
+    }
+
+    public Query getDownloadSecondQuery() {
+        return downloadSecondQuery;
+    }
+
+    public String[] getDownloadSecondLayers() {
+        return downloadSecondLayers;
+    }
+
+    public String[] getDownloadSecondLayersDN() {
+        return downloadSecondLayersDN;
     }
 
     public void openFacets(Event event) {
@@ -3349,7 +3360,8 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
         this.downloadSecondQuery = downloadSecondQuery;
     }
 
-    public void setDownloadSecondLayers(String[] downloadSecondLayers) {
+    public void setDownloadSecondLayers(String[] downloadSecondLayers, String[] downloadSecondLayersDN) {
         this.downloadSecondLayers = downloadSecondLayers == null ? null : downloadSecondLayers.clone();
+        this.downloadSecondLayersDN = downloadSecondLayersDN == null ? null : downloadSecondLayersDN.clone();
     }
 }

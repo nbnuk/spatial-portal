@@ -54,7 +54,7 @@ public class Facet implements Serializable {
 
         this.valueArray = null;
 
-        this.parameter = (includeRange ? "" : "-") + this.field + ":" + this.value;
+        this.parameter = (includeRange ? "" : "*:* AND -(") + this.field + ":" + this.value + (includeRange ? "" : ")");
     }
 
     public Facet(String field, String strMin, String strMax, boolean includeRange) {
@@ -87,7 +87,7 @@ public class Facet implements Serializable {
 
         this.valueArray = null;
 
-        this.parameter = (includeRange ? "" : "-") + this.field + ":" + this.value;
+        this.parameter = (includeRange ? "" : "*:* AND -(") + this.field + ":" + this.value + (includeRange ? "" : ")");
     }
 
     public Facet(String fq, Facet[] orInAndTerms, Facet[] andTerms, Facet[] orTerms) {
@@ -143,13 +143,18 @@ public class Facet implements Serializable {
         boolean hasAnd = fq.contains(" AND ");
         boolean hasOr = fq.contains(" OR ");
 
+        //remove wrapper of -(-(..))
+        if (fq.startsWith("-(-(") && fq.endsWith("))")) {
+            fq = fq.substring(4, fq.length() -2);
+        }
+
         if (fq.startsWith("-(-(")) {
             // (10) -(-(<field>:[<min> TO <max>] AND <field>:[<min> TO <max>]) AND <field>:[* TO *] AND <field>:[* TO *])
             int p = fq.indexOf(')');
 
             //reverse sign to convert first inner AND into OR
             Facet[] orPart = parseTerms(" AND ", fq.substring(4, p), true);
-            Facet[] andPart = parseTerms(" AND ", fq.substring(p + 6, fq.length() - 1), false);
+            Facet[] andPart = fq.length() > p + 6 ? parseTerms(" AND ", fq.substring(p + 6, fq.length() - 1), false) : new Facet[0];
 
             return new Facet(fq, orPart, andPart, null);
         } else if (fq.startsWith("-(") && !fq.endsWith(")") && !hasOr) {
@@ -215,10 +220,10 @@ public class Facet implements Serializable {
         String facet = "";
         if (parameter == null) {
             if ((value.startsWith("\"") && value.endsWith("\"")) || value.equals("*")) {
-                facet = (includeRange ? "" : "-") + field + ":" + value;
+                facet = (includeRange ? "" : "*:* AND -(") + field + ":" + value + (includeRange ? "" : ")");
             } else {
                 try {
-                    facet = (includeRange ? "" : "-") + field + ":\"" + (value) + "\"";
+                    facet = (includeRange ? "" : "*:* AND -(") + field + ":\"" + (value) + "\"" + (includeRange ? "" : ")");
                 } catch (Exception e) {
                     (Logger.getLogger(Facet.class)).error("failed to encode to UTF-8: " + value, e);
                 }
@@ -237,11 +242,11 @@ public class Facet implements Serializable {
 
             } else if (field.equals("occurrence_year_decade") || field.equals("decade")) {
                 if (value.contains("before")) {
-                    facet = (includeRange ? "" : "-") + field + ":[* TO 1849-12-31T00:00:00Z]";
+                    facet = (includeRange ? "" : "*:* AND -(") + field + ":[* TO 1849-12-31T00:00:00Z]" + (includeRange ? "" : ")");
                 } else {
                     String yr = value.replace("\"", "");
                     yr = yr.substring(0, yr.length() - 1);
-                    facet = (includeRange ? "" : "-") + field + ":[" + yr + "0-01-01T00:00:00Z TO " + yr + "9-12-31T00:00:00Z]";
+                    facet = (includeRange ? "" : "*:* AND -(") + field + ":[" + yr + "0-01-01T00:00:00Z TO " + yr + "9-12-31T00:00:00Z]" + (includeRange ? "" : ")");
                 }
                 facet = facet.replace("_decade", "");
             }

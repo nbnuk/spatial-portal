@@ -16,6 +16,8 @@ import com.vividsolutions.jts.io.WKTWriter;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.StringRequestEntity;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONArray;
@@ -28,6 +30,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.ZipInputStream;
 
 /**
  * TODO NC 2013-08-15 - Remove all the references to the "include null" gesopatially kosher. I have removed from the UI but I didn't want to
@@ -36,7 +39,7 @@ import java.util.zip.GZIPInputStream;
  * @author Adam
  */
 public class BiocacheQuery implements Query, Serializable {
-    static final String SAMPLING_SERVICE_CSV_GZIP = "/webportal/occurrences.gz?";
+    static final String SAMPLING_SERVICE_CSV_GZIP = "/occurrences/index/download?facet=false&reasonTypeId=10&qa=none";
     static final String SAMPLING_SERVICE = "/webportal/occurrences?";
     static final String SPECIES_LIST_SERVICE_CSV = "/occurrences/facets/download?facets=names_and_lsid&lookup=true&count=true&";
     static final String SPECIES_COUNT_SERVICE = "/occurrence/facets?facets=names_and_lsid";
@@ -50,7 +53,8 @@ public class BiocacheQuery implements Query, Serializable {
     static final String QID_DETAILS = "/webportal/params/details/";
     static final String ENDEMIC_COUNT_SERVICE = "/explore/counts/endemic?";
     static final String ENDEMIC_SPECIES_SERVICE_CSV = "/explore/endemic/species.csv?";
-    static final String DEFAULT_ROWS = "pageSize=1000000";
+    static final String ENDEMIC_LIST = "/explore/endemic/species/";
+    static final String DEFAULT_ROWS = "&pageSize=1000000";
     static final String DEFAULT_ROWS_LARGEST = "pageSize=1000000";
     static final Pattern QUERY_PARAMS_PATTERN = Pattern.compile("&([a-zA-Z0-9_\\-]+)=");
     /**
@@ -58,6 +62,7 @@ public class BiocacheQuery implements Query, Serializable {
      */
     static final String DEFAULT_VALIDATION = "";
     static final String BIE_SPECIES = "/species/";
+    static final String BIE_SPECIES_WS = "/species/";
     static final String WMS_URL = "/webportal/wms/reflect?";
     private static final Logger LOGGER = Logger.getLogger(BiocacheQuery.class);
     private static final String[] COMMON_TAXON_RANKS = new String[]{
@@ -315,7 +320,10 @@ public class BiocacheQuery implements Query, Serializable {
 
     public static String getScientificNameRank(String lsid) {
 
-        String snUrl = CommonData.getBieServer() + BIE_SPECIES + lsid + ".json";
+        String snUrl = "true".equalsIgnoreCase(CommonData.getSettings().getProperty("new.bie")) ?
+                CommonData.getBieServer() + BIE_SPECIES_WS + lsid + ".json" :
+                CommonData.getBieWebServer() + BIE_SPECIES + lsid + ".json";
+
         LOGGER.debug(snUrl);
 
         try {
@@ -353,30 +361,65 @@ public class BiocacheQuery implements Query, Serializable {
      * @return
      */
     public static String getGuid(String name) {
-        String url = CommonData.getBieServer() + "/guid/" + name.replaceAll(" ", "%20");
-        try {
-            HttpClient client = new HttpClient();
-            GetMethod get = new GetMethod(url);
-            get.addRequestHeader(StringConstants.CONTENT_TYPE, StringConstants.APPLICATION_JSON);
+        if ("true".equalsIgnoreCase(CommonData.getSettings().getProperty("new.bie"))) {
+            String url = CommonData.getBieServer() + "/species/lookup/bulk";
+            try {
+                HttpClient client = new HttpClient();
+                PostMethod get = new PostMethod(url);
+                get.addRequestHeader(StringConstants.CONTENT_TYPE, StringConstants.APPLICATION_JSON);
+                get.setRequestEntity(new StringRequestEntity("{\"names\":[\"" + name.replace("\"","\\\"") + "\"]}"));
 
-            client.executeMethod(get);
-            String body = get.getResponseBodyAsString();
+                client.executeMethod(get);
+                String body = get.getResponseBodyAsString();
 
-            JSONParser jp = new JSONParser();
-            JSONArray ja = (JSONArray) jp.parse(body);
-            if (ja != null && !ja.isEmpty()) {
-                JSONObject jo = (JSONObject) ja.get(0);
-                if (jo != null && jo.containsKey("acceptedIdentifier")) {
-                    return jo.get("acceptedIdentifier").toString();
+                JSONParser jp = new JSONParser();
+                JSONArray ja = (JSONArray) jp.parse(body);
+                if (ja != null && !ja.isEmpty()) {
+                    JSONObject jo = (JSONObject) ja.get(0);
+                    if (jo != null && jo.containsKey("acceptedIdentifier") && jo.get("acceptedIdentifier") != null) {
+                        return jo.get("acceptedIdentifier").toString();
+                    } else if (jo != null && jo.containsKey("acceptedIdentifierGuid") && jo.get("acceptedIdentifierGuid") != null) {
+                        return jo.get("acceptedIdentifierGuid").toString();
+                    } else if (jo != null && jo.containsKey("acceptedConceptID") && jo.get("acceptedConceptID") != null) {
+                        return jo.get("acceptedConceptID").toString();
+                    } else if (jo != null && jo.containsKey("guid") && jo.get("guid") != null) {
+                        return jo.get("guid").toString();
+                    } else {
+                        return null;
+                    }
                 } else {
                     return null;
                 }
-            } else {
+            } catch (Exception e) {
+                LOGGER.error("error getting guid at: " + url, e);
                 return null;
             }
-        } catch (Exception e) {
-            LOGGER.error("error getting guid at: " + url, e);
-            return null;
+        } else {
+            String url = CommonData.getBieServer() + "/ws/guid/" + name.replaceAll(" ", "%20");
+            try {
+                HttpClient client = new HttpClient();
+                GetMethod get = new GetMethod(url);
+                get.addRequestHeader(StringConstants.CONTENT_TYPE, StringConstants.APPLICATION_JSON);
+
+                client.executeMethod(get);
+                String body = get.getResponseBodyAsString();
+
+                JSONParser jp = new JSONParser();
+                JSONArray ja = (JSONArray) jp.parse(body);
+                if (ja != null && !ja.isEmpty()) {
+                    JSONObject jo = (JSONObject) ja.get(0);
+                    if (jo != null && jo.containsKey("acceptedIdentifier") && jo.get("acceptedIdentifier") != null) {
+                        return jo.get("acceptedIdentifier").toString();
+                    } else {
+                        return null;
+                    }
+                } else {
+                    return null;
+                }
+            } catch (Exception e) {
+                LOGGER.error("error getting guid at: " + url, e);
+                return null;
+            }
         }
     }
 
@@ -391,7 +434,9 @@ public class BiocacheQuery implements Query, Serializable {
         String[] classificationList = {StringConstants.KINGDOM, StringConstants.PHYLUM, StringConstants.CLASS, StringConstants.ORDER, StringConstants.FAMILY, StringConstants.GENUS, StringConstants.SPECIES, StringConstants.SUB_SPECIES, StringConstants.SCIENTIFIC_NAME};
         Map<String, String> classification = new LinkedHashMap<String, String>();
 
-        String snUrl = CommonData.getBieServer() + BIE_SPECIES + lsid + ".json";
+        String snUrl = "true".equalsIgnoreCase(CommonData.getSettings().getProperty("new.bie")) ?
+                CommonData.getBieServer() + BIE_SPECIES_WS + lsid + ".json" :
+                CommonData.getBieWebServer() + BIE_SPECIES + lsid + ".json";
         LOGGER.debug(snUrl);
 
         try {
@@ -408,7 +453,7 @@ public class BiocacheQuery implements Query, Serializable {
             JSONObject joOcc = (JSONObject) jo.get("classification");
             for (String c : classificationList) {
                 //NC stop exception where a rank can't be found
-                String s = c.replace("ss", "zz");
+                String s = "true".equalsIgnoreCase(CommonData.getSettings().getProperty("new.bie")) ? c : c.replace("ss", "zz");
                 if (joOcc.containsKey(s)) {
                     String value = joOcc.get(s).toString();
                     if (value != null) {
@@ -416,7 +461,14 @@ public class BiocacheQuery implements Query, Serializable {
                     }
                 }
             }
-
+            if ("true".equalsIgnoreCase(CommonData.getSettings().getProperty("new.bie"))) {
+                joOcc = (JSONObject) jo.get("taxonConcept");
+                if (joOcc != null) {
+                    if (ArrayUtils.contains(classificationList, joOcc.get("rankString"))) {
+                        classification.put(joOcc.get("rankString").toString(), joOcc.get("nameString").toString());
+                    }
+                }
+            }
         } catch (Exception e) {
             LOGGER.debug("Error getting scientific name for: " + lsid);
 
@@ -583,7 +635,7 @@ public class BiocacheQuery implements Query, Serializable {
                 + SAMPLING_SERVICE_CSV_GZIP
                 + DEFAULT_ROWS
                 + "&q=" + getQ()
-                + paramQueryFields(fields)
+                + paramQueryFields(fields).replace("&fl=", "&fields=")
                 + getQc();
         LOGGER.debug(url);
         GetMethod get = new GetMethod(url);
@@ -593,7 +645,7 @@ public class BiocacheQuery implements Query, Serializable {
         long start = System.currentTimeMillis();
         try {
             client.executeMethod(get);
-            sample = decompressGz(get.getResponseBodyAsStream());
+            sample = decompressZip(get.getResponseBodyAsStream());
 
             //in the first line do field name replacement
             for (QueryField f : fields) {
@@ -779,23 +831,46 @@ public class BiocacheQuery implements Query, Serializable {
             endemicSpeciesList = sb.toString();
         } else {
 
+            forMapping = true;
+            if (paramId == null) makeParamId();
+
             HttpClient client = new HttpClient();
             String url = biocacheServer
-                    + ENDEMIC_SPECIES_SERVICE_CSV
-                    + "q=" + getQ()
-                    + getQc();
-
-            /* TODO: permit query without WKT */
-            if (wkt == null || wkt.isEmpty()) {
-                url += "&wkt=" + "POLYGON((-180%20-90%2C-180%2090%2C180%2090%2C180%20-90%2C-180%20-90))";
-            }
+                    + ENDEMIC_LIST
+                    + paramId
+                    + "?facets=names_and_lsid";
 
             LOGGER.debug(url);
             GetMethod get = new GetMethod(url);
 
             try {
                 client.executeMethod(get);
-                endemicSpeciesList = get.getResponseBodyAsString();
+
+                JSONParser jp = new JSONParser();
+
+                JSONArray ja = (JSONArray) jp.parse(get.getResponseBodyAsString());
+
+                //extract endemic matches from the species list
+                String speciesList = speciesList();
+                StringBuilder sb = new StringBuilder();
+
+                int idx = speciesList.indexOf('\n');
+                if (idx > 0) {
+                    sb.append(speciesList.substring(0, idx));
+                }
+                for (int j = 0; j < ja.size(); j++) {
+                    JSONObject jo = (JSONObject) ja.get(j);
+                    if (jo.containsKey("label")) {
+                        idx = speciesList.indexOf("\n" + jo.get("label") + ",");
+                        if (idx > 0) {
+                            int lineEnd = speciesList.indexOf('\n', idx + 1);
+                            if (lineEnd < 0) lineEnd = speciesList.length();
+                            sb.append(speciesList.substring(idx, lineEnd));
+                        }
+                    }
+                }
+
+                endemicSpeciesList = sb.toString();
             } catch (Exception e) {
                 LOGGER.error("error getting endemic species result", e);
             }
@@ -1119,7 +1194,13 @@ public class BiocacheQuery implements Query, Serializable {
         }
 
         try {
-            return sb.toString();
+            String q = sb.toString();
+            if (q.startsWith("&fq=")) {
+                q = q.substring(4);
+            } else if (q.startsWith("fq%28")) {
+                q = q.substring(5);
+            }
+            return q;
         } catch (Exception e) {
             LOGGER.error("error returning a string", e);
         }
@@ -1234,6 +1315,29 @@ public class BiocacheQuery implements Query, Serializable {
         return s;
     }
 
+    private String decompressZip(InputStream zipped) throws IOException {
+        String s = null;
+        try {
+            ZipInputStream gzip = new ZipInputStream(zipped);
+
+            //data.csv
+            gzip.getNextEntry();
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream(1048576);
+            byte[] buffer = new byte[1048576];
+            int size;
+            while ((size = gzip.read(buffer)) >= 0) {
+                baos.write(buffer, 0, size);
+            }
+            s = new String(baos.toByteArray());
+        } catch (Exception e) {
+            LOGGER.error("error decompressing gz stream", e);
+        }
+        zipped.close();
+
+        return s;
+    }
+
     /**
      * Retrieves a list of custom facets for the supplied query.
      *
@@ -1241,9 +1345,18 @@ public class BiocacheQuery implements Query, Serializable {
      */
     private List<QueryField> retrieveCustomFacets() {
         List<QueryField> customFacets = new ArrayList<QueryField>();
+
+        //custom fields can only be retrieved with specific query types
+        String full = getFullQ(false);
+
+        Matcher match = Pattern.compile("data_resource_uid:\"??dr[t][0-9]+\"??").matcher(full);
+        if (!match.find()) {
+            return customFacets;
+        }
+
         //look up facets
-        final String jsonUri = biocacheServer + "/upload/dynamicFacets?q=" + getFullQ(true) + "&qc=" + getQc();
         try {
+            final String jsonUri = biocacheServer + "/upload/dynamicFacets?q=" + URLEncoder.encode(match.group(), "UTF-8");
             HttpClient client = new HttpClient();
             GetMethod get = new GetMethod(jsonUri);
             get.addRequestHeader(StringConstants.CONTENT_TYPE, StringConstants.APPLICATION_JSON);
@@ -1265,7 +1378,7 @@ public class BiocacheQuery implements Query, Serializable {
                 }
             }
         } catch (Exception e) {
-            LOGGER.error("error loading custom facets for: " + jsonUri, e);
+            LOGGER.error("error loading custom facets for: " + getFullQ(false), e);
         }
         return customFacets;
     }
@@ -1658,7 +1771,10 @@ public class BiocacheQuery implements Query, Serializable {
         String[] classificationList = {StringConstants.KINGDOM, StringConstants.PHYLUM, StringConstants.CLASS, StringConstants.ORDER, StringConstants.FAMILY, StringConstants.GENUS, StringConstants.SPECIES, StringConstants.SUB_SPECIES};
         Map<String, String> classification = new LinkedHashMap<String, String>();
 
-        String snUrl = CommonData.getBieServer() + BIE_SPECIES + lsid + ".json";
+        String snUrl = "true".equalsIgnoreCase(CommonData.getSettings().getProperty("new.bie")) ?
+                CommonData.getBieServer() + BIE_SPECIES_WS + lsid + ".json" :
+                CommonData.getBieWebServer() + BIE_SPECIES + lsid + ".json";
+
         LOGGER.debug(snUrl);
 
         try {

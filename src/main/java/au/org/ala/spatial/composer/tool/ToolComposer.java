@@ -359,12 +359,13 @@ public class ToolComposer extends UtilityComposer {
 
             public void onEvent(Event event) {
                 Menuitem mi = (Menuitem) event.getTarget();
-                cbLayer1.setValue(mi.getValue() + " ");
-                cbLayer1.refresh(mi.getValue());
+                String displayname = ((JSONObject) CommonData.getLayer(mi.getValue()).get("layer")).get("displayname").toString();
+                cbLayer1.setValue(displayname + " ");
+                cbLayer1.refresh(displayname);
                 for (Object o : cbLayer1.getItems()) {
                     Comboitem ci = (Comboitem) o;
                     JSONObject jo = ci.getValue();
-                    if (jo.get(StringConstants.NAME).toString().equals(mi.getValue())) {
+                    if (jo.get(StringConstants.NAME).toString().equals(displayname)) {
                         cbLayer1.setSelectedItem(ci);
                         cbLayer1.setText(ci.getLabel());
                         toggles();
@@ -382,12 +383,13 @@ public class ToolComposer extends UtilityComposer {
 
             public void onEvent(Event event) throws Exception {
                 Menuitem mi = (Menuitem) event.getTarget();
-                cbLayer2.setValue(mi.getValue() + " ");
-                cbLayer2.refresh(mi.getValue());
+                String displayname = ((JSONObject) CommonData.getLayer(mi.getValue()).get("layer")).get("displayname").toString();
+                cbLayer2.setValue(displayname + " ");
+                cbLayer2.refresh(displayname);
                 for (Object o : cbLayer2.getItems()) {
                     Comboitem ci = (Comboitem) o;
                     JSONObject jo = ci.getValue();
-                    if (jo.get(StringConstants.NAME).equals(mi.getValue())) {
+                    if (jo.get(StringConstants.NAME).equals(displayname)) {
                         cbLayer2.setSelectedItem(ci);
                         cbLayer2.setText(ci.getLabel());
                         toggles();
@@ -841,7 +843,7 @@ public class ToolComposer extends UtilityComposer {
                     && divSpeciesSearch != null) {
                 divSpeciesSearch.setVisible(true);
                 vboxMultiple.setVisible(false);
-                divLifeform.setVisible(false);
+                if (divLifeform != null) divLifeform.setVisible(false);
                 if (event != null) {
                     toggles();
                 }
@@ -1090,7 +1092,7 @@ public class ToolComposer extends UtilityComposer {
                         loadAreaHighlightLayers(curTopArea.getDisplayName());
                     } else if (isAreaTab()) {
                         //multiple areas can be defined
-                        if (getFellow("cAreaCurrent") != null) {
+                        if (getFellowIfAny("cAreaCurrent") != null) {
                             loadAreaLayersCheckboxes(curTopArea.getDisplayName());
                         } else {
                             loadAreaLayers(curTopArea.getDisplayName());
@@ -1107,7 +1109,7 @@ public class ToolComposer extends UtilityComposer {
 
             if (ok) {
                 //not multiple areas can be defined
-                if (getFellow("cAreaCurrent") == null) {
+                if (getFellowIfAny("cAreaCurrent") == null) {
                     onClick$btnOk(null);
                 } else if (rAreaCustom != null) {
                     rAreaCustom.setSelected(false);
@@ -1218,6 +1220,7 @@ public class ToolComposer extends UtilityComposer {
                 if (nextDiv != null && rgSpecies != null && (includeAnalysisLayersForUploadQuery || includeAnalysisLayersForAnyQuery)) {
                     Query q = getSelectedSpecies();
                     if (q != null) {
+                        q = q.newFacet(new Facet("occurrence_status_s", "absent", false), false);
                         boolean test = includeAnalysisLayersForAnyQuery || (q instanceof UserDataQuery);
 
                         if (selectedLayersCombobox != null
@@ -1580,6 +1583,24 @@ public class ToolComposer extends UtilityComposer {
         try {
             if (lbListLayers.getSelectedLayers().length > 0) {
                 String[] sellayers = lbListLayers.getSelectedLayers();
+                for (String l : sellayers) {
+                    layers += l + ":";
+                }
+                layers = layers.substring(0, layers.length() - 1);
+            }
+        } catch (Exception e) {
+            LOGGER.warn("Unable to retrieve selected layers", e);
+        }
+
+        return layers;
+    }
+
+    public String getSelectedLayersWithDisplayNames() {
+        String layers = "";
+
+        try {
+            if (lbListLayers.getSelectedLayers().length > 0) {
+                String[] sellayers = lbListLayers.getSelectedLayersWithDisplayNames();
                 for (String l : sellayers) {
                     layers += l + ":";
                 }

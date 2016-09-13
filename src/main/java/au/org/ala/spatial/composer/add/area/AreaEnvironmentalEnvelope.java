@@ -456,7 +456,8 @@ public class AreaEnvironmentalEnvelope extends AreaToolComposer {
             activeAreaSize = list[2];
 
             //load the layer
-            MapLayer ml = mc.addWMSLayer(pid, txtLayerName.getText(), url, 0.75f, null, null, LayerUtilitiesImpl.ENVIRONMENTAL_ENVELOPE, null, null);
+            layerName = txtLayerName.getText();
+            MapLayer ml = mc.addWMSLayer(pid, layerName, url, 0.75f, null, null, LayerUtilitiesImpl.ENVIRONMENTAL_ENVELOPE, null, null);
 
             //add colour!
             int colour = Util.nextColour();
@@ -614,15 +615,19 @@ public class AreaEnvironmentalEnvelope extends AreaToolComposer {
     private MapLayer loadMap(JSONObject layer, int depth, double min, double max, boolean finalLayer) {
 
         String colour = finalLayer ? "0xFF0000" : FILTER_COLOURS[depth % FILTER_COLOURS.length];
+
+        //correct for data type conversions
+        double correction = 0.0000001;
+
         String filter
                 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><StyledLayerDescriptor xmlns=\"http://www.opengis.net/sld\">"
                 + "<NamedLayer><Name>ALA:" + ((JSONObject) layer.get("layer")).get(StringConstants.NAME) + "</Name>"
                 + "<UserStyle><FeatureTypeStyle><Rule><RasterSymbolizer><Geometry></Geometry>"
                 + "<ColorMap>"
-                + "<ColorMapEntry color=\"" + colour + "\" opacity=\"1\" quantity=\"" + (min - Math.abs(min * 0.01)) + "\"/>"
-                + "<ColorMapEntry color=\"" + colour + "\" opacity=\"0\" quantity=\"" + min + "\"/>"
-                + "<ColorMapEntry color=\"" + colour + "\" opacity=\"0\" quantity=\"" + max + "\"/>"
-                + "<ColorMapEntry color=\"" + colour + "\" opacity=\"1\" quantity=\"" + (max + Math.abs(max * 0.01)) + "\"/>"
+                + "<ColorMapEntry color=\"" + colour + "\" opacity=\"1\" quantity=\"" + (min - correction) + "\"/>"
+                + "<ColorMapEntry color=\"" + colour + "\" opacity=\"0\" quantity=\"" + (min - correction) + "\"/>"
+                + "<ColorMapEntry color=\"" + colour + "\" opacity=\"0\" quantity=\"" + (max + correction) + "\"/>"
+                + "<ColorMapEntry color=\"" + colour + "\" opacity=\"1\" quantity=\"" + (max + correction) + "\"/>"
                 + "</ColorMap></RasterSymbolizer></Rule></FeatureTypeStyle></UserStyle></NamedLayer></StyledLayerDescriptor>";
 
         try {
@@ -639,7 +644,7 @@ public class AreaEnvironmentalEnvelope extends AreaToolComposer {
                     (float) 0.75,
                     CommonData.getLayersServer() + "/layers/view/more/" + layer.get("spid"),
                     CommonData.getGeoServer() + "/wms?REQUEST=GetLegendGraphic&VERSION=1.0.0&FORMAT=image/png&WIDTH=20&HEIGHT=9&LAYER=" + ((JSONObject) layer.get("layer")).get(StringConstants.NAME),
-                    LayerUtilitiesImpl.ENVIRONMENTAL_ENVELOPE,
+                    LayerUtilitiesImpl.WMS_1_3_0,
                     null, null, null);
         } else {
             ml.setUri(((JSONObject) layer.get("layer")).get("displaypath").toString().replace("/gwc/service", "") + "&sld_body=" + filter);

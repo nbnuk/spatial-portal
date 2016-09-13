@@ -1,5 +1,6 @@
 package au.org.ala.spatial.composer.results;
 
+import au.org.ala.legend.Facet;
 import au.org.ala.spatial.StringConstants;
 import au.org.ala.spatial.composer.quicklinks.SamplingEvent;
 import au.org.ala.spatial.composer.quicklinks.SpeciesListEvent;
@@ -15,6 +16,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -194,7 +196,11 @@ public class AreaReportController extends UtilityComposer {
         if (boundingBox != null) {
             extras += ";boundingBox: " + boundingBox[0] + "," + boundingBox[1] + "," + boundingBox[2] + "," + boundingBox[3];
         }
-        remoteLogger.logMapAnalysis(displayname, "Tool - Area Report", areaName + "__" + sa.getReducedWkt(), "", "", pid, extras, "0");
+        String wkt = sa.getWkt();
+        if (!wkt.contains("ENVELOPE")) {
+            wkt = sa.getReducedWkt();
+        }
+        remoteLogger.logMapAnalysis(displayname, "Tool - Area Report", areaName + "__" + wkt, "", "", pid, extras, "0");
 
         // start checking of completed threads
         Events.echoEvent(StringConstants.CHECK_FUTURES, this, null);
@@ -577,6 +583,7 @@ public class AreaReportController extends UtilityComposer {
     Map<String, Integer> endemismCount(boolean worldSelected, AreaReportItemDTO model) {
         Map<String, Integer> countsData = new HashMap<String, Integer>();
         Query sq = QueryUtil.queryFromSelectedArea(null, selectedArea, false, new boolean[]{true, true, false});
+        sq = sq.newFacet(new Facet("occurrence_status_s", "absent", false), false);
         int endemicCount = sq.getEndemicSpeciesCount();
         countsData.put("endemicSpeciesCount", endemicCount);
         model.setCount(String.format("%,d", endemicCount));
@@ -593,6 +600,7 @@ public class AreaReportController extends UtilityComposer {
     Map<String, Integer> endemismCountKosher(boolean worldSelected, AreaReportItemDTO model) {
         Map<String, Integer> countsData = new HashMap<String, Integer>();
         Query sq2 = QueryUtil.queryFromSelectedArea(null, selectedArea, false, new boolean[]{true, false, false});
+        sq2 = sq2.newFacet(new Facet("occurrence_status_s", "absent", false), false);
         // based the endemic count on the geospatially kosher - endemic is
         // everything if the world is selected
         int count = sq2.getEndemicSpeciesCount();
@@ -611,7 +619,8 @@ public class AreaReportController extends UtilityComposer {
 
         Map<String, Integer> countsData = new HashMap<String, Integer>();
         try {
-            Query sq = QueryUtil.queryFromSelectedArea(null, selectedArea, false, null);
+            Query sq = QueryUtil.queryFromSelectedArea(null, selectedArea, false, new boolean[]{true, true, false});
+            sq = sq.newFacet(new Facet("occurrence_status_s", "absent", false), false);
             int resultsCount = sq.getSpeciesCount();
 
             if (resultsCount == 0) {
@@ -641,7 +650,8 @@ public class AreaReportController extends UtilityComposer {
         int colonIdx = facet.indexOf(':');
         String query = colonIdx > 0 ? facet : facet + ":*";
 
-        Query sq = QueryUtil.queryFromSelectedArea(null, selectedArea, query, false, null);
+        Query sq = QueryUtil.queryFromSelectedArea(null, selectedArea, query, false, new boolean[]{true, true, false});
+        sq = sq.newFacet(new Facet("occurrence_status_s", "absent", false), false);
         int count = sq.getSpeciesCount();
         if (count == -1) count = 0;
         String label = Labels.getLabel("facet." + facet, facet);
@@ -669,7 +679,8 @@ public class AreaReportController extends UtilityComposer {
 
         //url
         if (count > 0) {
-            dto.addUrlDetails(VIEW_RECORDS, CommonData.getBiocacheWebServer() + "/occurrences/search?q=" + sq.getQ() + "&qc=" + sq.getQc());
+            dto.addUrlDetails(VIEW_RECORDS, CommonData.getBiocacheWebServer() + "/occurrences/search?q=" + sq.getQ() +
+                    (StringUtils.isNotEmpty(sq.getQc()) ? sq.getQc() : ""));
 
             dto.setExtraParams(query);
             dto.setExtraInfo(new ExtraInfoEnum[]{ExtraInfoEnum.LIST, ExtraInfoEnum.MAP_ALL});
@@ -689,6 +700,7 @@ public class AreaReportController extends UtilityComposer {
 
         try {
             Query sq = QueryUtil.queryFromSelectedArea(null, selectedArea, false, new boolean[]{true, false, false});
+            sq = sq.newFacet(new Facet("occurrence_status_s", "absent", false), false);
             int resultsCountKosher = sq.getSpeciesCount();
 
             if (resultsCountKosher == 0) {
@@ -712,7 +724,8 @@ public class AreaReportController extends UtilityComposer {
 
         Map<String, Object> countsData = new HashMap<String, Object>();
         try {
-            Query sq = QueryUtil.queryFromSelectedArea(null, selectedArea, false, null);
+            Query sq = QueryUtil.queryFromSelectedArea(null, selectedArea, false, new boolean[]{true, true, false});
+            sq = sq.newFacet(new Facet("occurrence_status_s", "absent", false), false);
             int resultsCountOccurrences = sq.getOccurrenceCount();
             if (resultsCountOccurrences == 0) {
                 countsData.put(StringConstants.OCCURRENCES_COUNT, "0");
@@ -720,7 +733,8 @@ public class AreaReportController extends UtilityComposer {
 
                 return countsData;
             } else {
-                model.addUrlDetails(VIEW_RECORDS, CommonData.getBiocacheWebServer() + "/occurrences/search?q=" + sq.getQ() + "&qc=" + sq.getQc());
+                model.addUrlDetails(VIEW_RECORDS, CommonData.getBiocacheWebServer() + "/occurrences/search?q=" + sq.getQ() +
+                        (StringUtils.isNotEmpty(sq.getQc()) ? sq.getQc() : ""));
             }
 
             countsData.put(StringConstants.OCCURRENCES_COUNT, resultsCountOccurrences);
@@ -742,6 +756,7 @@ public class AreaReportController extends UtilityComposer {
         Map<String, Object> countsData = new HashMap<String, Object>();
         try {
             Query sq = QueryUtil.queryFromSelectedArea(null, selectedArea, false, new boolean[]{true, false, false});
+            sq = sq.newFacet(new Facet("occurrence_status_s", "absent", false), false);
             int resultsCountOccurrencesKosher = sq.getOccurrenceCount();
 
             if (resultsCountOccurrencesKosher == 0) {
@@ -750,8 +765,10 @@ public class AreaReportController extends UtilityComposer {
 
                 return countsData;
             } else {
-                countsData.put("viewRecordsKosherUrl", CommonData.getBiocacheWebServer() + "/occurrences/search?q=" + sq.getQ() + "&qc=" + sq.getQc());
-                model.addUrlDetails(VIEW_RECORDS, CommonData.getBiocacheWebServer() + "/occurrences/search?q=" + sq.getQ() + "&qc=" + sq.getQc());
+                countsData.put("viewRecordsKosherUrl", CommonData.getBiocacheWebServer() + "/occurrences/search?q=" + sq.getQ() +
+                        (StringUtils.isNotEmpty(sq.getQc()) ? sq.getQc() : ""));
+                model.addUrlDetails(VIEW_RECORDS, CommonData.getBiocacheWebServer() + "/occurrences/search?q=" + sq.getQ() +
+                        (StringUtils.isNotEmpty(sq.getQc()) ? sq.getQc() : ""));
             }
             model.setExtraInfo(new ExtraInfoEnum[]{ExtraInfoEnum.MAP_ALL, ExtraInfoEnum.SAMPLE});
             model.setGeospatialKosher(true);
@@ -778,7 +795,8 @@ public class AreaReportController extends UtilityComposer {
             if (event != null && event.getData() != null) {
                 baseQuery = new BiocacheQuery(null, null, (String) event.getData(), null, false, null);
             }
-            Query query = QueryUtil.queryFromSelectedArea(baseQuery, sa, true, null);
+            Query query = QueryUtil.queryFromSelectedArea(baseQuery, sa, true, new boolean[]{true, true, false});
+            query = query.newFacet(new Facet("occurrence_status_s", "absent", false), false);
 
             String activeAreaLayerName = getMapComposer().getNextActiveAreaLayerName(areaDisplayName);
             getMapComposer().mapSpecies(query, activeAreaLayerName, StringConstants.SPECIES, -1, LayerUtilitiesImpl.SPECIES, null, -1, MapComposer.DEFAULT_POINT_SIZE, MapComposer.DEFAULT_POINT_OPACITY,
@@ -803,6 +821,7 @@ public class AreaReportController extends UtilityComposer {
                 baseQuery = new BiocacheQuery(null, null, (String) event.getData(), null, false, null);
             }
             Query query = QueryUtil.queryFromSelectedArea(baseQuery, sa, true, new boolean[]{true, false, false});
+            query = query.newFacet(new Facet("occurrence_status_s", "absent", false), false);
 
             String activeAreaLayerName = getMapComposer().getNextActiveAreaLayerName(areaDisplayName + " geospatial kosher");
             getMapComposer().mapSpecies(query, activeAreaLayerName, StringConstants.SPECIES, -1, LayerUtilitiesImpl.SPECIES, null, -1, MapComposer.DEFAULT_POINT_SIZE, MapComposer.DEFAULT_POINT_OPACITY,
@@ -821,7 +840,7 @@ public class AreaReportController extends UtilityComposer {
             sb.append("MULTIPOINT(");
 
             if (pointsOfInterest == null) {
-                String wkt = selectedArea.getReducedWkt();
+                String wkt = selectedArea.getWkt();
                 if (wkt.contains(StringConstants.ENVELOPE) && selectedArea.getMapLayer() != null) {
                     // use boundingbox
                     List<Double> bbox = selectedArea.getMapLayer().getMapLayerMetadata().getBbox();
@@ -830,6 +849,8 @@ public class AreaReportController extends UtilityComposer {
                     double long2 = bbox.get(2);
                     double lat2 = bbox.get(3);
                     wkt = StringConstants.POLYGON + "((" + long1 + " " + lat1 + "," + long1 + " " + lat2 + "," + long2 + " " + lat2 + "," + long2 + " " + lat1 + "," + long1 + " " + lat1 + "))";
+                } else {
+                    wkt = selectedArea.getReducedWkt();
                 }
                 pointsOfInterest = getPointsOfInterest(wkt);
             }
@@ -859,8 +880,8 @@ public class AreaReportController extends UtilityComposer {
     public Map<String, Integer> intersectWithSpeciesDistributions(AreaReportItemDTO model) {
         Map<String, Integer> speciesDistributions = new HashMap<String, Integer>();
         try {
-            String wkt = selectedArea.getReducedWkt();
-            if (wkt!=null && wkt.contains(StringConstants.ENVELOPE) && selectedArea.getMapLayer() != null) {
+            String wkt = selectedArea.getWkt();
+            if (wkt != null && wkt.contains(StringConstants.ENVELOPE) && selectedArea.getMapLayer() != null) {
                 // use boundingbox
                 List<Double> bbox = selectedArea.getMapLayer().getMapLayerMetadata().getBbox();
                 double long1 = bbox.get(0);
@@ -868,6 +889,8 @@ public class AreaReportController extends UtilityComposer {
                 double long2 = bbox.get(2);
                 double lat2 = bbox.get(3);
                 wkt = StringConstants.POLYGON + "((" + long1 + " " + lat1 + "," + long1 + " " + lat2 + "," + long2 + " " + lat2 + "," + long2 + " " + lat1 + "," + long1 + " " + lat1 + "))";
+            } else {
+                wkt = selectedArea.getReducedWkt();
             }
             String[] lines = Util.getDistributionsOrChecklists(StringConstants.DISTRIBUTIONS, wkt, null, null);
 
@@ -891,8 +914,8 @@ public class AreaReportController extends UtilityComposer {
     public Map<String, String> intersectWithSpeciesChecklists(AreaReportItemDTO areaModel, AreaReportItemDTO spModel) {
         Map<String, String> checklistsCounts = new HashMap<String, String>();
         try {
-            String wkt = selectedArea.getReducedWkt();
-            if (wkt != null && wkt.contains(StringConstants.ENVELOPE) && selectedArea.getMapLayer() != null) {
+            String wkt = selectedArea.getWkt();
+            if (wkt != null &&wkt.contains(StringConstants.ENVELOPE) && selectedArea.getMapLayer() != null) {
                 // use boundingbox
                 List<Double> bbox = selectedArea.getMapLayer().getMapLayerMetadata().getBbox();
                 double long1 = bbox.get(0);
@@ -900,6 +923,8 @@ public class AreaReportController extends UtilityComposer {
                 double long2 = bbox.get(2);
                 double lat2 = bbox.get(3);
                 wkt = StringConstants.POLYGON + "((" + long1 + " " + lat1 + "," + long1 + " " + lat2 + "," + long2 + " " + lat2 + "," + long2 + " " + lat1 + "," + long1 + " " + lat1 + "))";
+            } else {
+                wkt = selectedArea.getReducedWkt();
             }
 
             String[] lines = Util.getDistributionsOrChecklists(StringConstants.CHECKLISTS, wkt, null, null);
@@ -932,7 +957,7 @@ public class AreaReportController extends UtilityComposer {
     public Map<String, String> countGazPoints(AreaReportItemDTO model) {
         Map<String, String> gazPointsCounts = new HashMap<String, String>();
         try {
-            String wkt = selectedArea.getReducedWkt();
+            String wkt = selectedArea.getWkt();
             if (wkt != null && wkt.contains(StringConstants.ENVELOPE) && selectedArea.getMapLayer() != null) {
                 // use boundingbox
                 List<Double> bbox = selectedArea.getMapLayer().getMapLayerMetadata().getBbox();
@@ -941,6 +966,8 @@ public class AreaReportController extends UtilityComposer {
                 double long2 = bbox.get(2);
                 double lat2 = bbox.get(3);
                 wkt = StringConstants.POLYGON + "((" + long1 + " " + lat1 + "," + long1 + " " + lat2 + "," + long2 + " " + lat2 + "," + long2 + " " + lat1 + "," + long1 + " " + lat1 + "))";
+            } else {
+                wkt = selectedArea.getReducedWkt();
             }
 
             JSONArray ja = getGazPoints(wkt);
@@ -965,7 +992,7 @@ public class AreaReportController extends UtilityComposer {
     public Map<String, String> countPointsOfInterest(AreaReportItemDTO model) {
         Map<String, String> poiCounts = new HashMap<String, String>();
         try {
-            String wkt = selectedArea.getReducedWkt();
+            String wkt = selectedArea.getWkt();
             if (wkt != null && wkt.contains(StringConstants.ENVELOPE) && selectedArea.getMapLayer() != null) {
                 // use boundingbox
                 List<Double> bbox = selectedArea.getMapLayer().getMapLayerMetadata().getBbox();
@@ -974,6 +1001,8 @@ public class AreaReportController extends UtilityComposer {
                 double long2 = bbox.get(2);
                 double lat2 = bbox.get(3);
                 wkt = StringConstants.POLYGON + "((" + long1 + " " + lat1 + "," + long1 + " " + lat2 + "," + long2 + " " + lat2 + "," + long2 + " " + lat1 + "," + long1 + " " + lat1 + "))";
+            } else {
+                wkt = selectedArea.getReducedWkt();
             }
 
             int count = getPointsOfInterestCount(wkt);

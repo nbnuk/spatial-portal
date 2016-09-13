@@ -4,9 +4,9 @@
  */
 package au.org.ala.spatial.composer.tool;
 
+import au.org.ala.legend.Facet;
 import au.org.ala.spatial.StringConstants;
 import au.org.ala.spatial.util.*;
-import au.org.emii.portal.menu.MapLayer;
 import au.org.emii.portal.menu.SelectedArea;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
@@ -59,13 +59,13 @@ public class ScatterplotListComposer extends ToolComposer {
         LOGGER.debug("Area: " + getSelectedArea());
         LOGGER.debug("Species: " + getSelectedSpecies());
 
-        Query query = getSelectedSpecies();
-        if (query == null) {
+        Query lsid = getSelectedSpecies();
+        if (lsid == null) {
             getMapComposer().showMessage("There was a problem selecting the species.  Try to select the species again", this);
             return false;
         }
+        lsid = lsid.newFacet(new Facet("occurrence_status_s", "absent", false), false);
 
-        Query lsid = getSelectedSpecies();
         SelectedArea filterSa = getSelectedArea();
         SelectedArea highlightSa = getSelectedAreaHighlight();
         Query lsidQuery = QueryUtil.queryFromSelectedArea(lsid, filterSa, false, getGeospatialKosher());
@@ -78,6 +78,7 @@ public class ScatterplotListComposer extends ToolComposer {
         String pid = "";
 
         Query backgroundLsid = getSelectedSpeciesBk();
+        backgroundLsid = backgroundLsid.newFacet(new Facet("occurrence_status_s", "absent", false), false);
         if (bgSearchSpeciesACComp.hasValidAnnotatedItemSelected()) {
             backgroundLsid = bgSearchSpeciesACComp.getQuery((Map) getMapComposer().getSession().getAttribute(StringConstants.USERPOINTS), false, getGeospatialKosher());
         }
@@ -89,7 +90,7 @@ public class ScatterplotListComposer extends ToolComposer {
             backgroundLsidQuery = QueryUtil.queryFromSelectedArea(backgroundLsid, filterSa, false, getGeospatialKosherBk());
         }
 
-        String sbenvsel = getSelectedLayers();
+        String sbenvsel = getSelectedLayersWithDisplayNames();
         String[] layers = sbenvsel.split(":");
         if (layers.length > 20) {
             getMapComposer().showMessage(sbenvsel.split(":").length + " layers selected.  Please select fewer than 20 environmental layers in step 1.");
@@ -99,28 +100,13 @@ public class ScatterplotListComposer extends ToolComposer {
         StringBuilder layernames = new StringBuilder();
         String layerunits = "";
         for (int i = 0; i < layers.length; i++) {
+            String[] split = layers[i].split("\\|");
             if (layernames.length() > 0) {
                 layernames.append(",");
                 layerunits += ",";
             }
-            String layerDisplayName = CommonData.getLayerDisplayName(layers[i]);
-            if (layerDisplayName == null) {
-                //check for user layers
-                for (MapLayer ml : getMapComposer().getAnalysisLayers()) {
-                    try {
-                        if (layers[i].equals(ml.getPid())) {
-                            layerDisplayName = ml.getDisplayName();
-                        }
-                    } catch (Exception e) {
-                    }
-                }
-
-            }
-            if (layerDisplayName == null) {
-                //still cannot find a layer name. default to internal name.
-                LOGGER.error("failed to get layer display name for: " + layers[i]);
-                layerDisplayName = layers[i];
-            }
+            layers[i] = split[0];
+            String layerDisplayName = split[1];
             layernames.append("\"").append(layerDisplayName.replace("\"", "\"\"").replace("\\", "\\\\")).append("\"");
 
             String units = "";

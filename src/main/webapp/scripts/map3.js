@@ -590,8 +590,16 @@ function pointSpeciesSearch(e) {
                             }
                         }
                         var data = null;
-                        if (query != null) data = getOccurrence(layer, query, lonlat.lat, lonlat.lon, 0, pos, size);
-                        if (userquery != null) data = getOccurrenceUploaded(layer, userquery, lonlat.lat, lonlat.lon, 0, pos, size);
+                        if (layer.displayname !== undefined && layer.displayname != null && layer.displayname.endsWith('_highlight')) {
+                            query_layer[pos] = layer;
+                            query_size[pos] = 0;
+                            query_[pos] = query;
+                            query_url[pos] = null;
+                            data = []
+                        } else {
+                            if (query != null) data = getOccurrence(layer, query, lonlat.lat, lonlat.lon, 0, pos, size);
+                            if (userquery != null) data = getOccurrenceUploaded(layer, userquery, lonlat.lat, lonlat.lon, 0, pos, size);
+                        }
                         if (data != null) {
                             query_count_total += query_size[pos];
                             pos += 1;
@@ -1002,10 +1010,14 @@ function displaySpeciesInfo(pos, data, prevBtn, nextBtn, curr, total) {
     var checkstate = "";
     if (checked) checkstate = "checked='" + checked + "'";
 
+    var displayname = "";
+    if (query_layer[pos].displayname !== undefined) displayname = " Layer: <i>" + query_layer[pos].displayname + " </i><br />"
+
     var infohtml = "<div id='sppopup2'> " +
         heading +
         "<div id=''>" + prevBtn + " &nbsp; &nbsp; &nbsp; &nbsp; " + nextBtn + "</div>" +
         "<table><tr><td valign='top'>" +
+        displayname +
         " Scientific name: " + species + " <br />" +
         " Kingdom: " + kingdom + " <br />" +
         " Family: " + family + " <br />" +
@@ -1570,20 +1582,40 @@ function envLayerHover(e, displayFull) {
         var names = "";
         for (var i = layers.length - 1; i >= 0; i--) {
             var layer = layers[i];
-
+            var found = true
             var p0 = layer.url.indexOf("geoserver");
             var p1 = layer.url.indexOf("&style=") + 7;
             var p2 = layer.url.indexOf("_style", p1 + 1);
             if (p0 < 0 || p1 < 7 || p1 < 1) {
-                continue;
+                found = false;
             }
 
-            if (p2 < 1) p2 = layer.url.length;
+            if (found) {
+                if (p2 < 1) p2 = layer.url.length;
 
-            if (names.length > 0) {
-                names = names + ",";
+                if (layer.url.substring(p1, p2).indexOf("&") >= 0) found = false
+                else {
+                    if (names.length > 0) {
+                        names = names + ",";
+                    }
+                    names = names + layer.url.substring(p1, p2);
+                }
             }
-            names = names + layer.url.substring(p1, p2);
+
+            if (!found) {
+                var p1 = layer.url.indexOf("=ALA:") + 5;
+                var p2 = layer.url.indexOf("&", p1 + 1);
+                if (p0 < 0 || p1 < 5 || p1 < 1) {
+                    continue
+                }
+
+                if (p2 < 1) p2 = layer.url.length;
+
+                if (names.length > 0) {
+                    names = names + ",";
+                }
+                names = names + layer.url.substring(p1, p2);
+            }
         }
 
         if (names.length == 0) {

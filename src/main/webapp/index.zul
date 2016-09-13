@@ -6,7 +6,7 @@
 <?component name="footer" macro-uri="/WEB-INF/zul/footer.zul"?>
 <?component name="contextualMenu" macro-uri="/WEB-INF/zul/quicklinks/ContextualMenu.zul"?>
 
-<?page id="MapZul" title="Analyse data | Atlas of Living Scotland" cacheable="false" contentType="text/html;charset=UTF-8"?>
+<?page id="MapZul" title="Spatial portal | Atlas of Living Australia" cacheable="false" contentType="text/html;charset=UTF-8"?>
 <?link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico"?>
 
 <?style href="css/jquery.autocomplete.css" type="text/css" ?>
@@ -20,7 +20,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.zkoss.org/2005/zul http://www.zkoss.org/2005/zul/zul.xsd"
     xmlns:n="http://www.zkoss.org/2005/zk/native">
-
+  
     <script defer="false" type="text/javascript">
         var mapLayers = null;
         var currFeature = null;
@@ -76,9 +76,9 @@
             _gaq.push(['_trackPageview']);
 
             (function() {
-            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
             })();
         </script>
         <script defer="true" type="text/JavaScript" src="scripts/index.js" />
@@ -88,56 +88,56 @@
         <div id="menucontainer">
             <div width="400px" id="menudiv" sclass="menudiv" height="39px" style="position:absolute; top:51px">
 
-                <style>
-                    #nav-site_old .navbar-inner_old .nav_old > li > a {
+            <style>
+                #nav-site_old .navbar-inner_old .nav_old > li > a {
                     padding-left:8px;
                     padding-right:8px;
-                    }
-                    #nav-site_old .navbar-inner_old {
+                }
+                #nav-site_old .navbar-inner_old {
                     padding-left:0px;
                     padding-right:0px;
                     border: 0px;
-                    }
-                    #nav-site_old .navbar-inner_old .nav_old > li > a {
-                    background-color: #575756;
-                    border-left: 1px solid #575756;
-                    border-right: 1px solid #575756;
-                    border-collapse: collapse;
-                    color: #FFF;
-                    -webkit-box-shadow: none;
-                    -moz-box-shadow: none;
-                    box-shadow: none;
-                    text-shadow: none;
-                    font-size: 14px;
-                    padding: 9px 8px 7px;
-                    margin-right: -1px;
-                    }
+                }
+                #nav-site_old .navbar-inner_old .nav_old > li > a {
+                  background-color: #DF4A21;
+                  border-left: 1px solid #DF4A21;
+                  border-right: 1px solid #DF4A21;
+                  border-collapse: collapse;
+                  color: #FFF;
+                  -webkit-box-shadow: none;
+                  -moz-box-shadow: none;
+                  box-shadow: none;
+                  text-shadow: none;
+                  font-size: 14px;
+                  padding: 9px 8px 7px;
+                  margin-right: -1px;
+                }
 
-                    .navbar_old .nav_old > li > a {
-                    float: none;
-                    padding: 10px 15px 10px;
-                    color: #777;
-                    text-decoration: none;
-                    text-shadow: 0 1px 0 #FFF;
-                    }
+                .navbar_old .nav_old > li > a {
+                  float: none;
+                  padding: 10px 15px 10px;
+                  color: #777;
+                  text-decoration: none;
+                  text-shadow: 0 1px 0 #FFF;
+                }
 
-                    .nav_old > li > a {
-                    display: block;
-                    }
+                .nav_old > li > a {
+                  display: block;
+                }
 
-                    .nav_old {
-                    position: relative;
-                    left: 0;
-                    display: block;
+                .nav_old {
+                  position: relative;
+                  left: 0;
+                  display: block;
+                  float: left;
+                  margin: 0 10px 0 0;
+                }
+
+                .dropdown_old {
                     float: left;
-                    margin: 0 10px 0 0;
-                    }
-
-                    .dropdown_old {
-                    float: left;
                     position: relative;
                     display: block;
-                    }
+                }
 
             </style>
             <n:div n:id="nav-site_old" n:class="navbar_old" n:style="margin-bottom: 0px;
@@ -146,7 +146,7 @@
                                                                  z-index: 200;
                                                                  overflow: visible;
                                                                  position: relative;
-                                                                 background-color: #575756;">
+                                                                 background-color: #DF4A21;">
             <n:div n:class="navbar-inner_old">
                     <n:ul n:class="nav_old">
                         <n:li n:class="dropdown dropdown_old" >
@@ -204,6 +204,12 @@
                                 </n:li>
                                 <n:li>
                                     <n:a href="#" n:onClick="runTabulation();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.tabulation.enable")?"":"display:none"}'>Tabulate</n:a>
+                                </n:li>
+                                <n:li>
+                                    <n:a href="#" n:onClick="runInOut();"
+                                         n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.inout.enable")?"":"display:none"}'>
+                                        Compare Areas
+                                    </n:a>
                                 </n:li>
                                 <n:li>
                                     <n:a href="#" n:onClick="runSitesBySpecies();" n:style='${mapPortalPage.getSettingsSupplementary().getProperty("tools.pointstogrid.enable")?"":"display:none"}'>Points to Grid</n:a>
@@ -286,25 +292,19 @@
                     </n:div>
                 </n:div>
 
-                <div style="position: absolute; z-index: 201; left: 380px; top: 0px; width:20px; height:38px; background-color: #575756;color:white" >
+                <div style="position: absolute; z-index: 201; left: 380px; top: 0px; width:20px; height:38px; background-color: #df4a21;color:white" >
                     <div onClick='menus.setOpen(false);menudiv.setStyle("position:absolute; top:0px");menudiv.setParent(menucontainerwest);'
-                         sclass="z-borderlayout-icon z-icon-chevron-left"
-                         style="padding-left:9px;line-height:39px">
+                        sclass="z-borderlayout-icon z-icon-chevron-left"
+                        style="padding-left:9px;line-height:39px">
                     </div>
                 </div>
             </div>
         </div>
 
         <html style="position:absolute">
-            <![CDATA[
+                        <![CDATA[
 
-                        <style>
-                        .navbar-primary { background-color: rgba(0,0,0,.7); }
-                        .navbar-inner img.brand { max-height: 25px; }
-                        div.navbar.navbar-inverse.navbar-fixed-top div div { margin-left: 10px; }
-                        .fancybox-close { display:none; }
-                        </style>
-
+                        <!-- Header -->
                         <!-- Navbar -->
                         <div class="navbar navbar-inverse navbar-fixed-top">
                             <div class="navbar-inner">
@@ -314,12 +314,67 @@
                                         <span class="icon-bar"></span>
                                         <span class="icon-bar"></span>
                                     </button>
-                                    <a class="navbar-brand" href="http://www.als.scot">
-                                        <img alt="brand" class="brand img-responsive" src="http://www.als.scot/wp-content/themes/atlas-sco/dist/images/logo.png">
+                                    <a class="navbar-brand" href="http://www.ala.org.au">
+                                        <img alt="brand" class="brand img-responsive" src="http://www2.ala.org.au/commonui-bs2/images/supporting-graphic-element-flat.png">
                                     </a>
-
+                                    <a class="brand" href="http://www.ala.org.au">
+                                        The Atlas Of Living Australia
+                                    </a>
                                     <div class="nav-collapse collapse">
+                                        <ul class="nav">
+                                            <li>
+                                                <a href="http://www.ala.org.au/about-the-atlas/contact-us/">Contact us</a>
+                                            </li>
+                                            <li>
+                                                <a href="http://www.ala.org.au/get-involved/">Get involved</a>
+                                            </li>
+                                            <li class="dropdown font-xsmall">
+                                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                                                    ALA Apps
+                                                    <span class="caret"></span>
+                                                </a>
+                                                    <ul class="dropdown-menu" role="menu">
+                                                        <li><a href="http://spatial.ala.org.au">Spatial portal</a></li>
+                                                        <li ><a href="http://biocache.ala.org.au">Occurrence search</a></li>
+                                                        <li ><a href="http://fish.ala.org.au">Fish map</a></li>
+                                                        <li ><a href="http://regions.ala.org.au">Regions</a></li>
+                                                        <li ><a href="http://biocache.ala.org.au/explore/your-area">Explore your area</a></li>
 
+                                                        <li class="divider"></li>
+                                                        <li><a href="http://sightings.ala.org.au">Record a sighting</a></li>
+                                                        <li><a href="http://collections.ala.org.au">Collections</a></li>
+                                                        <li><a href="http://volunteer.ala.org.au">DigiVol</a></li>
+                                                        <li><a href="http://fieldcapture.ala.org.au">Fieldcapture</a></li>
+                                                        <li><a href="http://www.soils2satellites.org.au/">Soils to satellite</a></li>
+                                                        <li><a href="http://lists.ala.org.au">Traits, species lists</a></li>
+
+                                                        <li class="divider"></li>
+                                                        <li><a href="http://root.ala.org.au">Community portals</a></li>
+                                                        <li><a href="http://dashboard.ala.org.au">Dashboard</a></li>
+                                                        <li><a href="http://collections.ala.org.au/datasets">Datasets browser</a></li>
+                                                    </ul>
+                                            </li>
+                                        </ul>
+                                        <ul class="nav pull-right">
+                                            <li><a href="javascript:saveSession();" title="Save current session">Save session</a>
+                                            </li>
+                                            <li class="dropdown font-xsmall">
+                                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                                                    User settings
+                                                    <span class="caret"></span>
+                                                </a>
+                                                <ul class="dropdown-menu" role="menu">
+                                                    <li><a href="http://auth.ala.org.au/userdetails/myprofile">My profile</a></li>
+                                                    <li class="divider"></li>
+                                                    <li><a href='https://auth.ala.org.au/cas/login?service=http://spatial.ala.org.au/webportal//' class='null'><span>Log in</span></a></li>
+                                                    <li><a href="https://auth.ala.org.au/userdetails/registration/createAccount">Register</a></li>
+                                                </ul>
+                                            </li>
+                                        </ul>
+                                        <form class="navbar-form" role="search" action="http://bie.ala.org.au/search" method="get">
+                                            <input type="text" class="general-search ac_input form-control " name="q" placeholder="Search the Atlas" >
+                                            <button type="submit" class="btn btn-primary">Search</button>
+                                        </form>
                                     </div><!-- /.nav-collapse -->
                                 </div><!-- /.container -->
                             </div><!-- /.navbar-inner -->
@@ -327,8 +382,8 @@
 
                         <!-- End header -->
 
-            ]]>
-        </html>
+                        ]]>
+                        </html>
 
         <borderlayout width="100%" height="100%">
             <north id="header" height="51" visible="true" style="height: 51px;width:100%">
@@ -479,7 +534,7 @@
             phylolist_url.setValue(mapPortalPage.getSettingsSupplementary().getProperty("phylolist_url"));
             sandbox_url.setValue(mapPortalPage.getSettingsSupplementary().getProperty("sandbox.url"));
             gaz_layer.setValue(mapPortalPage.getSettingsSupplementary().getProperty("area_report_gaz_field"));
-        </zscript>
+</zscript>
 
 
         <script><![CDATA[
@@ -590,3 +645,4 @@ function readCookie(name) {
 <script defer="true" src="scripts/bootstrap.js"  ></script>
    
 </zk>
+

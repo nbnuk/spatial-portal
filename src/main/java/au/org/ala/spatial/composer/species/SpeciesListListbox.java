@@ -154,6 +154,8 @@ public class SpeciesListListbox extends Listbox {
         Map<String, String> indexedLists = SpeciesListUtil.getIndexedLists();
         List<Facet> facets = new ArrayList<Facet>();
 
+        int maxOrTerms = Integer.parseInt(CommonData.getSettings().getProperty("solr.maxOrTerms", "200"));
+        int count = 0;
         for (String list : selectedLists) {
             //get the speciesListItems
             if(indexedLists.containsKey(list)){
@@ -174,7 +176,9 @@ public class SpeciesListListbox extends Listbox {
         }
         String[] unmatchedNames = !names.isEmpty() ? names.toArray(new String[names.size()]) : null;
         String lsids = sb.length() > 0 ? sb.toString() : null;
-        return new BiocacheQuery(lsids, unmatchedNames, null, null, facets, false, geospatialKosher);
+
+        //ignore unmatchedNames
+        return new BiocacheQuery(lsids, null, null, null, null, false, geospatialKosher);
     }
 
     public String getSelectedNames() {
