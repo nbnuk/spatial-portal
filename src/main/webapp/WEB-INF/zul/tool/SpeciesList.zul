@@ -19,7 +19,6 @@
         <vbox >
             <div id="atstep1" visible="true" zclass="first optional last download" sclass="atstep" style="padding:5px;">
                 <label id="atstep1_desc" value="Apply to an area" sclass="wSubLabel"/>
-                <label id="atstep1_label" value="" />
                 <vbox>
                     <separator height="20px" />
                     <checkbox id="chkGeoKosherTrue" checked="true" label="Include spatially-valid records" />
@@ -30,8 +29,10 @@
                 <separator />
                 <radiogroup id="rgArea" orient="vertical" onOK="addtoolwindow.onClick$btnOk(null)" focus="true">
                     <radio id="rAreaCurrent" label="Current extent" value="current" />
-                    <radio id="rAreaAustralia" label="${addtoolwindow.getMapComposer().getSettingsSupplementary().getProperty('default.name')}" value="australia" />
-                    <radio id="rAreaWorld" label="World" value="world" />
+                    <radio id="rAreaAustralia" label="${addtoolwindow.getMapComposer().getSettingsSupplementary().getProperty('default.name')}" value="australia"
+                           n:style='${addtoolwindow.getMapComposer().getSettingsSupplementary().getProperty("country.restrict.disable") ? "display:none":""}'
+                    />
+                    <radio id="rAreaWorld" label="${addtoolwindow.getMapComposer().getSettingsSupplementary().getProperty('default.world.name', 'world')}" value="world"/>
                     <radio id="rAreaCustom" label="Define new area" value="custom" />
                 </radiogroup>
             </div>            

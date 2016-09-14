@@ -19,17 +19,17 @@
         <vbox  >
             <radiogroup id="rgArea" orient="vertical" focus="true" onOK="addspeciesinareawindow.onClick$btnOk(null)">
                 <radio id="rAreaCurrent" label="Current extent" value="current" />
-                <radio id="rAreaAustralia" label="${addspeciesinareawindow.getMapComposer().getSettingsSupplementary().getProperty('default.name')}" value="australia" />
-                <radio id="rAreaWorld" label="World" value="world" checked="true"/>
+                <radio id="rAreaAustralia" label="${addspeciesinareawindow.getMapComposer().getSettingsSupplementary().getProperty('default.name')}" value="australia"
+                       n:style='${addspeciesinareawindow.getMapComposer().getSettingsSupplementary().getProperty("country.restrict.disable") ? "display:none":""}'
+                />
+                <radio id="rAreaWorld" label="${addspeciesinareawindow.getMapComposer().getSettingsSupplementary().getProperty('default.world.name', 'world')}" value="world" checked="true"/>
                 <radio id="rAreaCustom" label="Define new area" value="custom" />
             </radiogroup>
         </vbox>
 
        <div class="btn-group" >
-
-                <button  label="Cancel" id="btnCancel"/>
-                <button class="btn-primary"  label="Next >" id="btnOk" />
-
+            <button  label="Cancel" id="btnCancel"/>
+            <button class="btn-primary"  label="Next >" id="btnOk" />
         </div>
     </window>
 </zk>

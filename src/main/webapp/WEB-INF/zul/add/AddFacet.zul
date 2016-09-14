@@ -52,8 +52,10 @@
                     <separator />
                     <radiogroup id="rgArea" orient="vertical" onOK="addfacetwindow.onClick$btnOk(null)" height="500px">
                         <radio id="rAreaCurrent" label="Current extent" value="current"/>
-                        <radio id="rAreaAustralia" label="${addfacetwindow.getMapComposer().getSettingsSupplementary().getProperty('default.name')}" value="australia"/>
-                        <radio id="rAreaWorld" label="World" value="world" checked="true"/>
+                        <radio id="rAreaAustralia" label="${addfacetwindow.getMapComposer().getSettingsSupplementary().getProperty('default.name')}" value="australia"
+                               n:style='${addfacetwindow.getMapComposer().getSettingsSupplementary().getProperty("country.restrict.disable") ? "display:none":""}'
+                        />
+                        <radio id="rAreaWorld" label="${addfacetwindow.getMapComposer().getSettingsSupplementary().getProperty('default.world.name', 'world')}" value="world" checked="true"/>
                         <radio id="rAreaCustom" label="Define new area" value="custom" />
                     </radiogroup>
                 </div>

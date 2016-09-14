@@ -22,8 +22,10 @@
                 <separator />
                 <radiogroup id="rgArea" orient="vertical" onOK="addtoolwindow.onClick$btnOk(null)" focus="true" style="height:220px;overflow:scroll;" >
                     <radio id="rAreaCurrent" label="Current extent" value="current" />
-                    <radio id="rAreaAustralia" label="${addtoolwindow.getMapComposer().getSettingsSupplementary().getProperty('default.name')}" value="australia" />
-                    <radio id="rAreaWorld" label="World" value="world" />
+                    <radio id="rAreaAustralia" label="${addtoolwindow.getMapComposer().getSettingsSupplementary().getProperty('default.name')}" value="australia"
+                           n:style='${addtoolwindow.getMapComposer().getSettingsSupplementary().getProperty("country.restrict.disable") ? "display:none":""}'
+                    />
+                    <radio id="rAreaWorld" label="${addtoolwindow.getMapComposer().getSettingsSupplementary().getProperty('default.world.name', 'world')}" value="world" checked="true"/>
                     <radio id="rAreaCustom" label="Define new area" value="custom" />
                 </radiogroup>               
             </div>
