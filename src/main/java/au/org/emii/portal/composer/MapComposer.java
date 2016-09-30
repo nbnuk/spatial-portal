@@ -199,23 +199,31 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
                 } else if (selectedLayer.getType() == LayerUtilitiesImpl.WKT) {
                     openLayersJavascript.redrawWKTFeatures(selectedLayer);
                 } else {
-                    String envString = "";
-                    if ("-1".equals(selectedLayer.getColourMode())) {
-                        envString += "color:" + hexColour;
+                    String envString = "color:" + hexColour;
+
+                    LegendObject lo = selectedLayer.getLegendObject();
+                    if (lo != null && lo.getColourMode() != null) {
+                        envString += ";colormode:" + lo.getColourMode();
                     } else {
-                        LegendObject lo = selectedLayer.getLegendObject();
-                        if (lo != null && lo.getColourMode() != null) {
-                            envString += "colormode:" + lo.getColourMode();
-                        } else {
-                            envString += "colormode:" + selectedLayer.getColourMode();
+                        envString += ";colormode:" + selectedLayer.getColourMode();
+                    }
+
+                    if(selectedLayer.getOsGridResolution() != null){
+                        envString += ";gridres:" + selectedLayer.getOsGridResolution();
+                        if(selectedLayer.isDisplayGridReferences()){
+                            envString += ";gridlabels:on";
                         }
                     }
-                    envString += ";name:circle;size:" + selectedLayer.getSizeVal();
+
+                    envString += ";name:circle";
+
+                    envString += ";size:" + selectedLayer.getSizeVal();
 
                     //Opacity now handled only by openlayers
-                    if ((selectedLayer.getHighlight() == null || selectedLayer.getHighlight().length() == 0
-                            || !StringConstants.GRID.equals(selectedLayer.getColourMode()))
-                            && selectedLayer.getSizeUncertain()) {
+                    if ( (selectedLayer.getHighlight() == null
+                            || selectedLayer.getHighlight().length() == 0
+                            || !StringConstants.GRID.equals(selectedLayer.getColourMode())
+                          ) && selectedLayer.getSizeUncertain()) {
                         envString += ";uncertainty:1";
                     }
                     selectedLayer.setEnvParams(envString + ";opacity:1");
@@ -1772,6 +1780,22 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
                 , mapExpertDistribution);
     }
 
+    /**
+     *
+     * @param sq
+     * @param species
+     * @param rank
+     * @param count
+     * @param subType e.g. LayerUtilitiesImpl.SPECIES
+     * @param wkt
+     * @param setGrid
+     * @param size
+     * @param opacity
+     * @param colour
+     * @param colourBy
+     * @param mapExpertDistribution
+     * @return
+     */
     public MapLayer mapSpecies(Query sq, String species, String rank, int count, int subType, String wkt
             , int setGrid, int size, float opacity, int colour, String colourBy, boolean mapExpertDistribution) {
 
@@ -2209,8 +2233,8 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
         return ml;
     }
 
-    MapLayer mapSpeciesWMSByFilter(String label, String filter, int subType, Query query, boolean grid, int size
-            , float opacity, int colour) {
+    MapLayer mapSpeciesWMSByFilter(String label, String filter, int subType, Query query, boolean grid, int size,
+            float opacity, int colour) {
         String uri;
 
         int r = (colour >> 16) & 0x000000ff;
@@ -2241,12 +2265,17 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
         Color c = new Color(r, g, b);
         String hexColour = Integer.toHexString(c.getRGB() & 0x00ffffff);
         String envString = "";
-        if (grid) {
-            //colour mode is in 'filter' but need to move it to envString
-            envString += "colormode:grid";
-        } else {
-            envString = "color:" + hexColour;
-        }
+
+        //TODO make the default map type configurable
+        envString = "color:" + hexColour + ";colormode:osgrid";
+
+//        if (grid) {
+//            colour mode is in 'filter' but need to move it to envString
+//            envString += "colormode:grid";
+//        } else {
+//            envString = "color:" + hexColour;
+//        }
+
         envString += ";name:circle;size:" + sz + ";opacity:1";
         if (uncertaintyCheck > 0) {
             envString += ";uncertainty:1";
@@ -2265,8 +2294,19 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
         try {
             if (safeToPerformMapAction()) {
                 if (getMapLayer(label) == null) {
-                    MapLayer ml = addWMSLayer(label, label, uri + filter, op, null, null, subType, ""
-                            , envString, query);
+                    MapLayer ml = addWMSLayer(
+                            label,
+                            label,
+                            uri + filter,
+                            op,
+                            null,
+                            null,
+                            subType,
+                            "",
+                            envString,
+                            query);
+
+
                     if (ml != null) {
                         ml.setDynamicStyle(true);
                         ml.setEnvParams(envString);
@@ -2277,6 +2317,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
                         ml.setRedVal(r);
                         ml.setSizeVal(sz);
                         ml.setOpacity(op);
+
 
                         ml.setClustered(false);
 

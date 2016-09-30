@@ -467,6 +467,7 @@
         <label id="phylolist_url" visible="false" />
         <label id="sandbox_url" visible="false" />
         <label id="gaz_layer" visible="false"/>
+        <label id="collectory_url" visible="false"/>
 
         <zscript>
             sat_url.setValue(mapPortalPage.getSettingsSupplementary().getProperty("sat_url"));
@@ -482,6 +483,7 @@
             phylolist_url.setValue(mapPortalPage.getSettingsSupplementary().getProperty("phylolist_url"));
             sandbox_url.setValue(mapPortalPage.getSettingsSupplementary().getProperty("sandbox.url"));
             gaz_layer.setValue(mapPortalPage.getSettingsSupplementary().getProperty("area_report_gaz_field"));
+            collectory_url.setValue(mapPortalPage.getSettingsSupplementary().getProperty("collectory_url"));
         </zscript>
 
 

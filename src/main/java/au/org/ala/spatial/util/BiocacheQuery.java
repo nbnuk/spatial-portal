@@ -41,7 +41,7 @@ import java.util.zip.ZipInputStream;
 public class BiocacheQuery implements Query, Serializable {
     static final String SAMPLING_SERVICE_CSV_GZIP = "/occurrences/index/download?facet=false&reasonTypeId=10&qa=none";
     static final String SAMPLING_SERVICE = "/webportal/occurrences?";
-    static final String SPECIES_LIST_SERVICE_CSV = "/occurrences/facets/download?facets=names_and_lsid&lookup=true&count=true&";
+    static final String SPECIES_LIST_SERVICE_CSV = "/occurrences/facets/download?facets=names_and_lsid&lookup=true&count=true";
     static final String SPECIES_COUNT_SERVICE = "/occurrence/facets?facets=names_and_lsid";
     static final String DOWNLOAD_URL = "/occurrences/download?";
     static final String DATA_PROVIDERS_SERVICE = "/webportal/dataProviders?";
@@ -210,14 +210,6 @@ public class BiocacheQuery implements Query, Serializable {
         if (facets != null) {
             this.facets = new ArrayList<Facet>(facets.size());
             this.facets.addAll(facets);
-        }
-
-        //adds a custom filter for this installation of the spatial portal
-        if(CommonData.getBiocacheQueryContext() != null){
-            if (extraParams == null) {
-                    extraParams = "";
-            }
-            extraParams = extraParams + "&" + CommonData.getBiocacheQueryContext();
         }
 
         this.wkt = (wkt != null && wkt.equals(CommonData.WORLD_WKT)) ? null : Util.fixWkt(wkt);
@@ -1474,7 +1466,7 @@ public class BiocacheQuery implements Query, Serializable {
      */
     @Override
     public LegendObject getLegend(String colourmode) {
-        if ("-1".equals(colourmode) || StringConstants.GRID.equals(colourmode)) {
+        if ("-1".equals(colourmode) || StringConstants.GRID.equals(colourmode) || StringConstants.OSGRID.equals(colourmode)) {
             return null;
         }
         LegendObject lo = legends.get(colourmode);
@@ -1510,10 +1502,15 @@ public class BiocacheQuery implements Query, Serializable {
 
                 //test for exceptions
                 if (!colourmode.contains(",")
-                        && (StringConstants.UNCERTAINTY.equals(colourmode)
-                        || StringConstants.DECADE.equals(colourmode)
+                        && (
+//                        StringConstants.UNCERTAINTY.equals(colourmode)
+//                        ||
+                        StringConstants.DECADE.equals(colourmode)
                         || StringConstants.OCCURRENCE_YEAR.equals(colourmode)
-                        || StringConstants.COORDINATE_UNCERTAINTY.equals(colourmode))) {
+//                        || StringConstants.COORDINATE_UNCERTAINTY.equals(colourmode)
+                )
+
+                        ) {
                     lo = ((BiocacheLegendObject) lo).getAsIntegerLegend();
 
                     //apply cutpoints to colourMode string
@@ -1543,6 +1540,8 @@ public class BiocacheQuery implements Query, Serializable {
                             if (StringConstants.OCCURRENCE_YEAR.equals(colourmode) || StringConstants.DECADE.equals(colourmode)) {
                                 sb.append(StringConstants.DATE_TIME_END_OF_YEAR);
                             }
+                        } else if (i < cutpoints.length - 1 && cutpoints[i] == cutpoints[i + 1]) {
+                            cutpointmins[i + 1] = cutpointmins[i];
                         }
                         i++;
                     }

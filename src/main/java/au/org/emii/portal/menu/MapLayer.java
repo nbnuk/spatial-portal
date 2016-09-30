@@ -56,7 +56,7 @@ public class MapLayer extends AbstractIdentifierImpl implements Cloneable, Seria
      * URI to fetch WMS data from
      */
     private String uri = null;
-    /*
+    /**
      * geoserver Common Query Language
      */
     private String cql = null;
@@ -189,6 +189,10 @@ public class MapLayer extends AbstractIdentifierImpl implements Cloneable, Seria
     private JSONArray classificationObjects;
     private String baseUri;
     private String wktUrl;
+
+    /** OS grid options */
+    private String osGridResolution;  // "singlegrid", "variablegrid" or ""
+    private boolean displayGridReferences;
 
     /**
      * Constructor
@@ -957,6 +961,22 @@ public class MapLayer extends AbstractIdentifierImpl implements Cloneable, Seria
 
     public void setBaseUri(String baseUri) {
         this.baseUri = baseUri;
+    }
+
+    public String getOsGridResolution() {
+        return osGridResolution;
+    }
+
+    public void setOsGridResolution(String osGridResolution) {
+        this.osGridResolution = osGridResolution;
+    }
+
+    public boolean isDisplayGridReferences() {
+        return displayGridReferences;
+    }
+
+    public void setDisplayGridReferences(boolean displayGridReferences) {
+        this.displayGridReferences = displayGridReferences;
     }
 
     public String testWKT() {

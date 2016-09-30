@@ -63,7 +63,7 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
                     + "</ColorMap></RasterSymbolizer></Rule></FeatureTypeStyle></UserStyle></NamedLayer></StyledLayerDescriptor>";
     private Combobox cbColour;
     private Radiogroup pointtype;
-    private Radio rPoint, rCluster, rGrid;
+    private Radio rPoint, rCluster, rGrid, rOSGrid;
     private Textbox txtLayerName;
     private Slider opacitySlider;
     private Label opacityLabel;
@@ -82,6 +82,7 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
     private Div clusterpoints;
     private Div uncertainty;
     private Hbox uncertaintyLegend;
+    private Hbox cbColourHbox;
     private Div colourChooser;
     private Div sizeChooser;
     private Image legendImg;
@@ -116,6 +117,16 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
     private Button clearSelection;
     private Button createInGroup;
     private Label lblSelectedCount;
+
+    //os grid controls
+    private Div osgridControls;
+    private Radiogroup osGridDisplayType;
+    private Radio rOSGridVariable, rOSGridSingleResolution, rOSGrid10kmOnly;
+    private Div variableGridLegend;
+    private Checkbox chkDisplayGridReferences;
+    private Div displayGridResolution;
+    private Div displayGridResolutionColour;
+
     private Set selectedList = new HashSet();
 
     @Override
@@ -151,6 +162,12 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
             }
         });
 
+
+        llc2MapLayer.setColourMode("osgrid");
+        int displayType = 3;
+
+//        int displayType = (StringConstants.GRID.equals(llc2MapLayer.getColourMode())) ? 0 : ((llc2MapLayer.isClustered()) ? 1 : 2);
+
         init(
                 llc2MapLayer,
                 llc2MapLayer.getSpeciesQuery(),
@@ -160,7 +177,7 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
                 llc2MapLayer.getSizeVal(),
                 (int) (llc2MapLayer.getOpacity() * 100),
                 llc2MapLayer.getColourMode(),
-                (StringConstants.GRID.equals(llc2MapLayer.getColourMode())) ? 0 : ((llc2MapLayer.isClustered()) ? 1 : 2),
+                displayType,
                 llc2MapLayer.getSizeUncertain());
 
         getFellow("btnSearch").addEventListener(StringConstants.ONCLICK, new EventListener() {
@@ -278,6 +295,8 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
             updateLegendImage();
 
             refreshLayer();
+
+            displayGridResolutionColour.setStyle(backgroundColor + ":#" + colour +"; width:18px;");
         }
     }
 
@@ -387,15 +406,23 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
             pointtype.setSelectedItem(rCluster);
         } else if (type == 2) {
             pointtype.setSelectedItem(rPoint);
+        } else if (type == 3) {
+            pointtype.setSelectedItem(rOSGrid);
+        }
+
+        if(StringConstants.OSGRID.equals(colourMode)){
+            ml.setOsGridResolution(getOSGridMode());
+            chkDisplayGridReferences.setChecked(true);
+            rOSGridVariable.setChecked(true);
         }
 
         chkUncertaintySize.setChecked(uncertainty);
 
         updateUserColourDiv();
+
         updateLegendImage();
 
         setupLayerControls(ml);
-
 
         updateAnimationDiv();
 
@@ -428,8 +455,20 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
     public String getColourMode() {
         if (pointtype.getSelectedItem() == rGrid) {
             return StringConstants.GRID;
+        } else if (pointtype.getSelectedItem() == rOSGrid) {
+            return StringConstants.OSGRID;
         } else {
             return (String) cbColour.getSelectedItem().getValue();
+        }
+    }
+
+    public String getOSGridMode() {
+        if (osGridDisplayType.getSelectedItem() == rOSGrid10kmOnly) {
+            return "10kgrid";
+        } else if (osGridDisplayType.getSelectedItem() == rOSGridSingleResolution) {
+            return "singlegrid";
+        } else {
+            return "variablegrid";
         }
     }
 
@@ -446,7 +485,10 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
                 || (ml.getColourMode() != null && !ml.getColourMode().equals(getColourMode()))
                 || (ml.isClustered() && getPointType() != 1)
                 || ml.getSizeUncertain() != getUncertainty()
-                || !ml.getDisplayName().equals(getDisplayName())) {
+                || !ml.getDisplayName().equals(getDisplayName())
+                || (ml.getOsGridResolution() != null && !ml.getOsGridResolution().equals(getOSGridMode()))
+                || chkDisplayGridReferences.isChecked() != ml.isDisplayGridReferences()
+                ) {
 
             //layer in menu settings
             if (!ml.getDisplayName().equals(getDisplayName())) {
@@ -467,6 +509,18 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
             ml.setClustered(getPointType() == 0);
             ml.setSizeUncertain(getUncertainty());
 
+            if(StringConstants.OSGRID.equals(getColourMode())) {
+                ml.setOsGridResolution(getOSGridMode());
+                ml.setDisplayGridReferences(chkDisplayGridReferences.isChecked());
+                if("singlegrid".equals(getOSGridMode())){
+                    //setup legend
+                    int r = redSlider.getCurpos();
+                    int g = greenSlider.getCurpos();
+                    int b = blueSlider.getCurpos();
+                    displayGridResolutionColour.setStyle( "background-color: rgb(" + r + "," + g + "," + b + "); width:18px;");
+                }
+            }
+
             mc.applyChange(ml);
         }
     }
@@ -485,6 +539,8 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
         String colourMode = cbColour.getSelectedItem().getValue();
         if (pointtype.getSelectedItem() == rGrid) {
             colourMode = StringConstants.GRID;
+        } else if(pointtype.getSelectedItem() == rOSGrid) {
+            colourMode = StringConstants.OSGRID;
         }
 
         //put any parameters into map
@@ -496,6 +552,7 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
 
         String colourmode = cbColour.getSelectedItem().getValue();
         if (!StringConstants.GRID.equals(m.getColourMode())
+                && !StringConstants.OSGRID.equals(m.getColourMode())
                 && query.getLegend(colourmode).getCategoryNameOrder() != null) {
             map.put("checkmarks", StringConstants.TRUE);
         }
@@ -521,6 +578,8 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
             return 0;
         } else if (pointtype.getSelectedItem() == rCluster) {
             return 1;
+        } else if (pointtype.getSelectedItem() == rOSGrid) {
+            return 3;
         } else {
             return 2;
         }
@@ -545,6 +604,20 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
         setupLayerControls(mapLayer);
     }
 
+    public void onCheck$osGridDisplayType(Event event) {
+        Radio selectedItem = (Radio) ((org.zkoss.zk.ui.event.ForwardEvent) event).getOrigin().getTarget();
+        osGridDisplayType.setSelectedItem(selectedItem);
+        mapLayer.setHighlight(null);
+
+        refreshLayer();
+
+        setupLayerControls(mapLayer);
+    }
+
+    public void onCheck$chkDisplayGridReferences() {
+        refreshLayer();
+    }
+
     void refreshLayer() {
         if (!inInit) {
             sLayerName = txtLayerName.getValue();
@@ -557,15 +630,53 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
 
         if (currentSelection != null) {
             if (currentSelection.isDynamicStyle()) {
+
+                boolean showingGrids = StringConstants.GRID.equals(m.getColourMode()) || StringConstants.OSGRID.equals(m.getColourMode());
+
                 if (StringConstants.GRID.equals(m.getColourMode())) {
                     pointtype.setSelectedItem(rGrid);
                     uncertainty.setVisible(false);
+                    sizeChooser.setVisible(false);
+                    colourChooser.setVisible(false);
+                    osgridControls.setVisible(false);
+                    uncertaintyLegend.setVisible(false);
+                    cbColourHbox.setVisible(false);
+                    variableGridLegend.setVisible(false);
+                    chkDisplayGridReferences.setVisible(false);
+                    displayGridResolution.setVisible(false);
+                } else if(StringConstants.OSGRID.equals(m.getColourMode())){
+                    pointtype.setSelectedItem(rOSGrid);
+                    uncertainty.setVisible(false);
+                    sizeChooser.setVisible(false);
+                    osgridControls.setVisible(true);
+                    chkDisplayGridReferences.setVisible(true);
+
+                    if(!"variablegrid".equals(getOSGridMode())){
+                        colourChooser.setVisible(true);
+                        cbColourHbox.setVisible(false);
+                        divUserColours.setVisible(true);
+                        variableGridLegend.setVisible(false);
+                    } else {
+                        variableGridLegend.setVisible(true);
+                        colourChooser.setVisible(false);
+                    }
+
+                    displayGridResolution.setVisible("singlegrid".equals(getOSGridMode()));
+
+                    legendHtml.setVisible(false);
                 } else {
                     pointtype.setSelectedItem(rPoint);
-
                     //uncertainty circles are only applicable to biocache point data
                     uncertainty.setVisible(currentSelection.getSpeciesQuery() != null
                             && currentSelection.getSpeciesQuery() instanceof BiocacheQuery);
+                    sizeChooser.setVisible(true);
+                    colourChooser.setVisible(true);
+                    cbColourHbox.setVisible(true);
+                    osgridControls.setVisible(false);
+                    divUserColours.setVisible(true);
+                    variableGridLegend.setVisible(false);
+                    chkDisplayGridReferences.setVisible(false);
+                    displayGridResolution.setVisible(false);
                 }
 
                 //fill cbColour
@@ -575,31 +686,23 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
 
                 updateAdhocGroupContols(currentSelection);
 
-                if ("-1".equals(currentSelection.getColourMode())) {
-                    divUserColours.setVisible(true);
-                } else {
-                    divUserColours.setVisible(false);
-                }
-
-                if (currentSelection.getGeometryType() != LayerUtilitiesImpl.POINT) {
-                    sizeChooser.setVisible(false);
-                    uncertainty.setVisible(false);
-                } else {
-                    sizeChooser.setVisible(pointtype.getSelectedItem() != rGrid);
-                    if (m.getGeoJSON() != null && m.getGeoJSON().length() > 0) {
-                        uncertainty.setVisible(false);
-                    } else {
-                        uncertainty.setVisible(!(query instanceof UserDataQuery));
+                if(!showingGrids) {
+                    if (currentSelection.getGeometryType() == LayerUtilitiesImpl.POINT) {
+                        if (m.getGeoJSON() != null && m.getGeoJSON().length() > 0) {
+                            uncertainty.setVisible(false);
+                        } else {
+                            uncertainty.setVisible(!(query instanceof UserDataQuery));
+                        }
                     }
                 }
 
-                colourChooser.setVisible(pointtype.getSelectedItem() != rGrid);
-
-                if ((cbColour.getSelectedItem() != ciColourUser || pointtype.getSelectedItem() == rGrid)
+                if(pointtype.getSelectedItem() == rOSGrid) {
+                    legendHtml.setVisible(false);
+                    legendImg.setVisible(false);
+                } else if ((cbColour.getSelectedItem() != ciColourUser || pointtype.getSelectedItem() == rGrid)
                         && m.isSpeciesLayer() /*&& !m.isClustered()*/) {
                     legendHtml.setVisible(true);
                     legendImg.setVisible(false);
-
                     showPointsColourModeLegend(m);
                 } else {
                     legendImg.setVisible(true);
@@ -687,15 +790,6 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
             layerControls.setAttribute("activeLayerName", currentSelection.getName());
             setupForClassificationLayers();
         }
-
-        if (m != null && m.isSpeciesLayer()) {
-            clusterpoints.setVisible(true);
-            cbColour.setDisabled(m.isClustered());
-        } else {
-            clusterpoints.setVisible(false);
-            cbColour.setDisabled(true);
-        }
-
         uncertaintyLegend.setVisible(chkUncertaintySize.isChecked());
     }
 
@@ -732,7 +826,6 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
             Collections.sort(fields, new QueryField.QueryFieldComparator());
 
             String lastGroup = null;
-
 
             for (QueryField field : fields) {
                 if (field.getGroup() != null && !field.getGroup().getName().equals(lastGroup)) {

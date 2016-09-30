@@ -276,6 +276,11 @@ public class BiocacheLegendObject extends LegendObject {
                 values[i++] = d;
             }
             return LegendBuilder.legendForDecades(values, new QueryField(colourMode, QueryField.FieldType.INT));
+
+//        } else if(StringConstants.COORDINATE_UNCERTAINTY.equals(colourMode) && true /*rangesDisabled*/) {
+
+
+
         } else {
             int size = 0;
             for (float f : categoriesNumeric.keySet()) {

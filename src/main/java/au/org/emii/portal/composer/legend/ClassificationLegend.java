@@ -323,8 +323,8 @@ public class ClassificationLegend extends UtilityComposer {
                     setupForBiocacheNumber(h, colourmode, true);
                 } else if (StringConstants.OCCURRENCE_YEAR_DECADE.equals(colourmode) || StringConstants.DECADE.equals(colourmode)) {
                     setupForBiocacheDecade();
-                } else if (StringConstants.COORDINATE_UNCERTAINTY.equals(colourmode) || StringConstants.UNCERTAINTY.equals(colourmode)) {
-                    setupForBiocacheNumber(h, colourmode, false);
+//                } else if (StringConstants.COORDINATE_UNCERTAINTY.equals(colourmode) || StringConstants.UNCERTAINTY.equals(colourmode)) {
+//                    setupForBiocacheNumber(h, colourmode, false);
                 } else if (StringConstants.MONTH.equals(colourmode)) {
                     setupForBiocacheMonth();
                 }

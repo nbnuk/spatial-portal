@@ -106,6 +106,7 @@ function loadEnd() {
     if (layersLoading == 0) {
         toggleLoadingImage("none");
     }
+    displayResolution();
 }
 
 function toggleLoadingImage(display) {
@@ -323,6 +324,9 @@ function buildMapReal(west, south, east, north) {
         if (parent.location.href.indexOf("?p=") < 0) {
             autoSwitchBaseMap();
         }
+
+        //if osgrid with single resolution is the active layer, update the legend....
+        displayResolution();
     });
 
     map.zoomToExtent(bounds, false);
@@ -330,6 +334,20 @@ function buildMapReal(west, south, east, north) {
     registerSpeciesClick();
     toggleActiveHover();
 }
+
+function displayResolution(){
+
+    if(parent.jq('$displayGridResolutionLabel')[0] !== undefined) {
+        if (map.getZoom() < 9) {
+            //if osgrid with single resolution is the active layer, update the legend....
+            parent.jq('$displayGridResolutionLabel')[0].innerHTML = "Displaying 10km grids";
+        } else {
+            parent.jq('$displayGridResolutionLabel')[0].innerHTML = "Displaying 1km grids";
+        }
+    }
+}
+
+
 
 function autoSwitchBaseMap() {
     if (map.zoom > 15) {
@@ -957,6 +975,7 @@ function relocatePopup(lon, lat) {
 function displaySpeciesInfo(pos, data, prevBtn, nextBtn, curr, total) {
     var occinfo = data;
     var bie = parent.jq('$bie_webapp_url')[0].innerHTML;
+    var collectory = parent.jq('$collectory_url')[0].innerHTML;
     var biocache = query_layer[pos].ws;
     var rank = occinfo.taxonRank;
     var speciesname = occinfo.scientificName;
@@ -1021,7 +1040,8 @@ function displaySpeciesInfo(pos, data, prevBtn, nextBtn, curr, total) {
         " Scientific name: " + species + " <br />" +
         " Kingdom: " + kingdom + " <br />" +
         " Family: " + family + " <br />" +
-        " Data provider: <a href='http://collections.ala.org.au/public/show/" + occinfo.dataProviderUid + "' target='_blank'>" + occinfo.dataProviderName + "</a> <br />" +
+        " Data provider: <a href='" + collectory +"/public/show/" + occinfo.dataProviderUid + "' target='_blank'>" + occinfo.dataProviderName + "</a> <br />" +
+        " Grid reference: " + occinfo.gridReference + " <br /> " +
         " Longitude: " + occinfo.decimalLongitude + " , Latitude: " + occinfo.decimalLatitude + " (<a href='javascript:goToLocation(" + occinfo.decimalLongitude + ", " + occinfo.decimalLatitude + ", 15);relocatePopup(" + occinfo.decimalLongitude + ", " + occinfo.decimalLatitude + ");'>zoom to</a>) <br/>" +
         " Spatial uncertainty in metres: " + uncertaintyText + "<br />" +
         " Occurrence date: " + occurrencedate + " <br />" +

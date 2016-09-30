@@ -133,7 +133,7 @@ public class SpeciesListResults extends UtilityComposer {
 
     public void onClick$btnDownload() {
         StringBuilder sb = new StringBuilder();
-        sb.append("LSID,Scientific Name,Taxon Concept,Taxon Rank,Kingdom,Phylum,Class,Order,Family,Genus,Vernacular Name,Number of records");
+        sb.append("LSID,Species Name,Taxon Concept,Taxon Rank,Kingdom,Phylum,Class,Order,Family,Genus,Vernacular Name,Number of records");
         for (int i = 0; i < CommonData.getSpeciesListAdditionalColumnsHeader().size(); i++) {
             sb.append(",").append(CommonData.getSpeciesListAdditionalColumnsHeader().get(i));
         }
