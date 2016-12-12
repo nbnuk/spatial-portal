@@ -79,7 +79,7 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
     private Label sizeLabel;
     private Listbox activeLayersList;
     private Div layerControls;
-    private Div clusterpoints;
+    private Div occurrenceDisplayOptions;
     private Div uncertainty;
     private Hbox uncertaintyLegend;
     private Hbox cbColourHbox;
@@ -126,6 +126,7 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
     private Checkbox chkDisplayGridReferences;
     private Div displayGridResolution;
     private Div displayGridResolutionColour;
+    private Div displayGridReferences;
 
     private Set selectedList = new HashSet();
 
@@ -162,11 +163,11 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
             }
         });
 
-
-        llc2MapLayer.setColourMode("osgrid");
-        int displayType = 3;
-
-//        int displayType = (StringConstants.GRID.equals(llc2MapLayer.getColourMode())) ? 0 : ((llc2MapLayer.isClustered()) ? 1 : 2);
+        int displayType = (StringConstants.GRID.equals(llc2MapLayer.getColourMode())) ? 0 : ((llc2MapLayer.isClustered()) ? 1 : 2);
+        if(llc2MapLayer.getLayer().equals(StringConstants.OCCURRENCE_LAYER)){
+            llc2MapLayer.setColourMode("osgrid");
+            displayType = 3;
+        }
 
         init(
                 llc2MapLayer,
@@ -629,7 +630,9 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
         MapLayer currentSelection = m;
 
         if (currentSelection != null) {
-            if (currentSelection.isDynamicStyle()) {
+            if (currentSelection.getLayer().equals(StringConstants.OCCURRENCE_LAYER)) {
+
+                occurrenceDisplayOptions.setVisible(true);
 
                 boolean showingGrids = StringConstants.GRID.equals(m.getColourMode()) || StringConstants.OSGRID.equals(m.getColourMode());
 
@@ -650,6 +653,7 @@ public class LayerLegendGeneralComposer extends GenericAutowireAutoforwardCompos
                     sizeChooser.setVisible(false);
                     osgridControls.setVisible(true);
                     chkDisplayGridReferences.setVisible(true);
+                    displayGridReferences.setVisible(true);
 
                     if(!"variablegrid".equals(getOSGridMode())){
                         colourChooser.setVisible(true);

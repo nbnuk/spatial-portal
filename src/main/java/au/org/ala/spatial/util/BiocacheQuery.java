@@ -1816,10 +1816,22 @@ public class BiocacheQuery implements Query, Serializable {
 
         StringBuilder sb = new StringBuilder();
         try {
-            sb.append("&fields=").append(URLEncoder.encode(CommonData.getSettings().getProperty("biocache_download_fields"), StringConstants.UTF_8));
+
+            String configuredDownloadFields = CommonData.getSettings().getProperty("biocache_download_fields");
+
+            if(StringUtils.isNotEmpty(configuredDownloadFields)){
+                sb.append("&fields=").append(URLEncoder.encode(configuredDownloadFields, StringConstants.UTF_8));
+            }
+
             List<String> customFields = retrieveCustomFields();
-            for (int i = 0; i < customFields.size(); i++) {
-                sb.append(",").append(customFields.get(i));
+            if(!customFields.isEmpty()){
+                sb.append("&extra=");
+                for (int i = 0; i < customFields.size(); i++) {
+                    if(i > 0) {
+                        sb.append(",");
+                        sb.append(customFields.get(i));
+                    }
+                }
             }
         } catch (Exception e) {
             LOGGER.error("webportal-config.properties biocache_download_fields error while encoding to UTF-8", e);

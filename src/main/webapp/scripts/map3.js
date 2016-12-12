@@ -338,16 +338,22 @@ function buildMapReal(west, south, east, north) {
 function displayResolution(){
 
     if(parent.jq('$displayGridResolutionLabel')[0] !== undefined) {
-        if (map.getZoom() < 9) {
+        if (map.getZoom() <= 5 ) {
+            //if osgrid with single resolution is the active layer, update the legend....
+            parent.jq('$displayGridResolutionLabel')[0].innerHTML = "Displaying 100km grids";
+        } else if (map.getZoom() > 5  && map.getZoom() < 9) {
             //if osgrid with single resolution is the active layer, update the legend....
             parent.jq('$displayGridResolutionLabel')[0].innerHTML = "Displaying 10km grids";
-        } else {
+        } else if (map.getZoom() == 9) {
+            //if osgrid with single resolution is the active layer, update the legend....
+            parent.jq('$displayGridResolutionLabel')[0].innerHTML = "Displaying 2km grids";
+        } else if (map.getZoom() > 9 && map.getZoom() < 13) {
             parent.jq('$displayGridResolutionLabel')[0].innerHTML = "Displaying 1km grids";
+        } else if (map.getZoom() >= 13) {
+            parent.jq('$displayGridResolutionLabel')[0].innerHTML = "Displaying 100m grids";
         }
     }
 }
-
-
 
 function autoSwitchBaseMap() {
     if (map.zoom > 15) {
@@ -1039,9 +1045,18 @@ function displaySpeciesInfo(pos, data, prevBtn, nextBtn, curr, total) {
         displayname +
         " Scientific name: " + species + " <br />" +
         " Kingdom: " + kingdom + " <br />" +
-        " Family: " + family + " <br />" +
-        " Data provider: <a href='" + collectory +"/public/show/" + occinfo.dataProviderUid + "' target='_blank'>" + occinfo.dataProviderName + "</a> <br />" +
-        " Grid reference: " + occinfo.gridReference + " <br /> " +
+        " Family: " + family + " <br />";
+
+    if( occinfo.dataProviderUid !== undefined){
+        infohtml =  infohtml + " Data partner: <a href='" + collectory +"/public/show/" + occinfo.dataProviderUid + "' target='_blank'>" + occinfo.dataProviderName + "</a> <br />";
+
+    }
+
+    if( occinfo.gridReference !== undefined) {
+        infohtml = infohtml + " Grid reference: " + occinfo.gridReference + " <br /> ";
+    }
+
+    infohtml = infohtml +
         " Longitude: " + occinfo.decimalLongitude + " , Latitude: " + occinfo.decimalLatitude + " (<a href='javascript:goToLocation(" + occinfo.decimalLongitude + ", " + occinfo.decimalLatitude + ", 15);relocatePopup(" + occinfo.decimalLongitude + ", " + occinfo.decimalLatitude + ");'>zoom to</a>) <br/>" +
         " Spatial uncertainty in metres: " + uncertaintyText + "<br />" +
         " Occurrence date: " + occurrencedate + " <br />" +

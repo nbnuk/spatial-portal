@@ -8,13 +8,13 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>au.org.ala</groupId>
+    <groupId>uk.org.nbn.atlas</groupId>
     <artifactId>spatial-portal</artifactId>
     <packaging>war</packaging>
     <version>3.1-SNAPSHOT</version>
 
 
-    <name>ALA Spatial Portal</name>
+    <name>NBN Spatial Portal</name>
     <description>The ALA Spatial Portal aims to provide a data discovery, visualisation and delivery system for ALA
         data. The project is built upon Open Source technologies, the ZK Ajax frameowrk and OpenLayers toolkit.
     </description>

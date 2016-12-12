@@ -16,7 +16,7 @@
                 </hbox>
             </div>
             <!-- points or grids -->
-            <div id="clusterpoints" align="left" style="padding-top:8px">
+            <div id="occurrenceDisplayOptions" align="left" style="padding-top:8px" visible="false">
                 <div style="padding-top:0px">
                     <label value="Occurrence display" sclass="h3" />
                 </div>
@@ -283,7 +283,7 @@
                 </vbox>
                 <separator />
 
-                <div id="variableGridLegend" align="left">
+                <div id="variableGridLegend" align="left" visible="false">
                     <grid id="variableGridLegendGrid" width="150px" zclass="noborder" style="padding-bottom:10px" >
                         <columns>
                             <column hflex="1"></column>
@@ -328,7 +328,7 @@
                     displayGridResolutionLabel.setValue("");
                 </zscript>
 
-                <div id="displayGridReferences" align="left" style="margin-bottom:25px;">
+                <div id="displayGridReferences" align="left" style="margin-bottom:25px;" visible="false">
                     <checkbox id="chkDisplayGridReferences" label="Display grid reference labels" />
                 </div>
 

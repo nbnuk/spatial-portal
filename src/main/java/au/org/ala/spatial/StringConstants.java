@@ -57,6 +57,7 @@ public final class StringConstants {
     public static final String ENABLED = "enabled";
     public static final String SCIENTIFIC = "scientific";
     public static final String USERPOINTS = "userpoints";
+    public static final String OCCURRENCE_LAYER = "ALA:occurrences";
 
     //lang params
     public static final String DEFAULT_AREA_LAYER_NAME = "default_area_layer_name";
