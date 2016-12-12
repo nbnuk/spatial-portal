@@ -11,13 +11,9 @@
     <groupId>uk.org.nbn.atlas</groupId>
     <artifactId>spatial-portal</artifactId>
     <packaging>war</packaging>
-    <version>3.1-SNAPSHOT</version>
-
-
+    <version>1.0-SNAPSHOT</version>
     <name>NBN Spatial Portal</name>
-    <description>The ALA Spatial Portal aims to provide a data discovery, visualisation and delivery system for ALA
-        data. The project is built upon Open Source technologies, the ZK Ajax frameowrk and OpenLayers toolkit.
-    </description>
+    <description>A forked version of the ALA Spatial portal.</description>
     <url>http://www.ala.org.au</url>
     <dependencies>
         <!-- Sun's DI API -->
@@ -687,8 +683,32 @@
             <artifactId>gt-wms</artifactId>
             <version>${geotools.version}</version>
         </dependency>
-
     </dependencies>
+    <repositories>
+        <repository>
+            <id>ala-repo</id>
+            <name>ALA repo</name>
+            <url>http://nexus.ala.org.au/content/repositories/releases</url>
+        </repository>
+        <repository>
+            <id>maven2-repository.dev.java.net</id>
+            <name>Java.net repository</name>
+            <url>http://download.java.net/maven/2</url>
+        </repository>
+        <repository>
+            <id>osgeo</id>
+            <name>Open Source Geospatial Foundation Repository</name>
+            <url>http://download.osgeo.org/webdav/geotools/</url>
+        </repository>
+        <repository>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <id>boundless</id>
+            <name>Boundless Maven Repository</name>
+            <url>http://repo.boundlessgeo.com/main</url>
+        </repository>
+    </repositories>
     <issueManagement>
         <system>Google Code</system>
         <url>http://code.google.com/p/alageospatialportal/issues/list</url>
@@ -789,11 +809,11 @@
                 </configuration>
                 <!-- <version></version> -->
             </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <version>3.0.0</version>
-            </plugin>
+            <!--<plugin>-->
+                <!--<groupId>org.codehaus.mojo</groupId>-->
+                <!--<artifactId>findbugs-maven-plugin</artifactId>-->
+                <!--<version>3.0.0</version>-->
+            <!--</plugin>-->
 
         </plugins>
     </reporting>
