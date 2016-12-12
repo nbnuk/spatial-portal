@@ -1,5 +1,5 @@
-### spatial-portal   [![Build Status](https://travis-ci.org/AtlasOfLivingAustralia/spatial-portal.svg?branch=master)](https://travis-ci.org/AtlasOfLivingAustralia/spatial-portal)
+### spatial-portal   [![Build Status](https://travis-ci.org/nbnuk/spatial-portal.svg?branch=master)](https://travis-ci.org/nbnuk/spatial-portal)
 spatial-portal
 ==============
 
-This is the spatial portal front end application which uses the ZK development framework.
+This is a modified version of the ALA's spatial portal to include support for OS grid mapping.
