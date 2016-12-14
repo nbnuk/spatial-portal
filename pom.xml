@@ -689,6 +689,18 @@
                                     <enabled>true</enabled>
                            </snapshots>
                   </repository>
+
+                  <repository>
+                           <id>central</id>
+                           <name>Central</name>
+                           <url>http://central.maven.org/maven2</url>
+                           <releases>
+                                    <enabled>true</enabled>
+                           </releases>
+                           <snapshots>
+                                    <enabled>true</enabled>
+                           </snapshots>
+                  </repository>                  
          </repositories>  
 
     <issueManagement>
