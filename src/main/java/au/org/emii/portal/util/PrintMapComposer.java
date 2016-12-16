@@ -518,7 +518,7 @@ public class PrintMapComposer {
         int imgWidth = (int) ((extents[2] - extents[0]) / resolutions[res]);
         int imgHeight = (int) ((extents[3] - extents[1]) / resolutions[res]);
 
-        String uri = "http://maps.googleapis.com/maps/api/staticmap?";
+        String uri = "https://maps.googleapis.com/maps/api/staticmap?";
         String parameters = "center=" + latitude + "," + longitude + "&zoom=" + res + "&scale=" + gScale + "&size=" + imgWidth + "x" + imgHeight + "&maptype=" + maptype;
 
         RescaleOp op = new RescaleOp(new float[]{1f, 1f, 1f, 1f}, new float[]{0f, 0f, 0f, 0f}, null);
