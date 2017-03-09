@@ -6,7 +6,8 @@
 <?component name="footer" macro-uri="/WEB-INF/zul/footer.zul"?>
 <?component name="contextualMenu" macro-uri="/WEB-INF/zul/quicklinks/ContextualMenu.zul"?>
 
-<?page id="MapZul" title="Analyse data | Atlas of Living Scotland" cacheable="false" contentType="text/html;charset=UTF-8"?>
+<?page id="MapZul" title="Analyse data | NBN Atlas" cacheable="false"
+        contentType="text/html;charset=UTF-8"?>
 
 <?link rel="icon" href="http://www.als.scot/wp-content/uploads/2016/05/cropped-ALS-a-06-1-32x32.png" sizes="32x32" ?>
 <?link rel="icon" href="http://www.als.scot/wp-content/uploads/2016/05/cropped-ALS-a-06-1-192x192.png" sizes="192x192" ?>
@@ -70,20 +71,7 @@
     <window id="mapPortalPage" width="100%" height="100%"
             use="au.org.emii.portal.composer.MapComposer" apply="au.org.emii.portal.composer.MapComposer"
             style="overflow:hidden;">
-        <script defer="false" type="text/javascript">
 
-            <!-- Set up the google analytics -->
-            var _gaq = _gaq || [];
-            _gaq.push(['_setAccount', 'UA-4355440-1']);
-            _gaq.push(['_setDomainName', 'ala.org.au']);
-            _gaq.push(['_trackPageview']);
-
-            (function() {
-            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-            })();
-        </script>
         <script defer="true" type="text/JavaScript" src="scripts/index.js" />
 
         <timer id="timerKeepAliveSession" repeats="true" delay="30000" onTimer="" />
@@ -582,11 +570,17 @@ function readCookie(name) {
             featuretool.setVisible(false);
         </zscript>
 
-
+        <script defer="false" type="text/javascript">
+            <!-- Set up the google analytics -->
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+            ga('create', '${mapPortalPage.getSettingsSupplementary().getProperty("google_analytics_id")}', 'auto');
+            ga('send', 'pageview');
+        </script>
 
     </window>
-
-
 
 
     <script defer="true" src="scripts/jquery-migrate-1.2.1.min.js" ></script>
