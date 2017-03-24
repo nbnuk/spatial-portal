@@ -17,6 +17,7 @@ public final class StringConstants {
     public static final String MONTH = "month";
     public static final String OCCURRENCE_YEAR = "occurrence_year";
     public static final String OCCURRENCE_YEAR_DECADE = "occurrence_year_decade";
+    public static final String OCCURRENCE_STATUS = "occurrence_status";
     public static final String GRID = "grid";
     public static final String OSGRID = "osgrid";
     public static final String COORDINATE_UNCERTAINTY = "coordinate_uncertainty";

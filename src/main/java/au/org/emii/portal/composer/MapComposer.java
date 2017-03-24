@@ -42,6 +42,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONArray;
@@ -63,6 +64,7 @@ import org.zkoss.zul.Window;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.awt.*;
 import java.io.*;
 import java.net.URLDecoder;
@@ -399,48 +401,73 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
                 iframe.setSrc("");
 
                 String content;
+
+
+                //is the use logged in ?
+                boolean isLoggedIn = Util.isLoggedIn();
+
+
                 if ("download".equalsIgnoreCase(label)) {
-                    // Added fast download option -
-                    // TODO refactor so this can be generated from same code that sets the downloadUrl (uri) in BiocacheQuery.java
-                    String fastDownloadUrl = newUri.replaceFirst("/occurrences/download", "/occurrences/index/download");
 
-                    StringBuilder sbContent = new StringBuilder();
-                    sbContent.append("<p id='termsOfUseDownload' style='padding:10px; margin-bottom: 0;'>");
-                    sbContent.append("By downloading this content you are agreeing to use it in accordance ");
-                    sbContent.append("with the Atlas of Living Australia <a href='http://www.ala.org.au/about/terms-of-use/#TOUusingcontent'>Terms of Use</a>");
-                    sbContent.append(" and any Data Provider Terms associated with the data download. ");
-                    sbContent.append("<br/><br/>");
-                    sbContent.append("Please provide the following details before downloading (* required)");
-                    sbContent.append("</p>");
-                    sbContent.append("    <form id='downloadForm' onSubmit='downloadSubmitButtonClick(); return false;' style='padding:10px;'>");
-                    sbContent.append("        <input type='hidden' name='url' id='downloadUrl' value='").append(uri).append("'/>");
-                    sbContent.append("        <input type='hidden' name='url' id='fastDownloadUrl' value='").append(fastDownloadUrl).append("'/>");
-                    sbContent.append("        <fieldset>");
-                    sbContent.append("            <p><label for='email'>Email</label>");
-                    sbContent.append("                <input type='text' name='email' id='email' value='' size='30'  />");
-                    sbContent.append("            </p>");
-                    sbContent.append("            <p><label for='filename'>File Name</label>");
-                    sbContent.append("                <input type='text' name='filename' id='filename' value='data' size='30'  />");
-                    sbContent.append("            </p>");
 
-                    sbContent.append("            <p><label for='reasonTypeId' style='vertical-align: top'>Download Reason *</label>");
-                    sbContent.append("            <select name='reasonTypeId' id='reasonTypeId'>");
-                    sbContent.append("            <option value=''>-- select a reason --</option>");
-                    JSONArray dlreasons = CommonData.getDownloadReasons();
-                    for (int i = 0; i < dlreasons.size(); i++) {
-                        JSONObject dlr = (JSONObject) dlreasons.get(i);
-                        sbContent.append("            <option value='").append((Long) dlr.get(StringConstants.ID)).append("'>").append(dlr.get(StringConstants.NAME)).append("</option>");
+                    String orgName = getSettingsSupplementary().getProperty("orgNameLong", "Atlas of Living Australia");
+                    String termsOfUse = getSettingsSupplementary().getProperty("terms_of_use_url", "http://www.ala.org.au/about-the-atlas/terms-of-use/#TOUusingcontent");
+                    String loginUrl = getSettingsSupplementary().getProperty("casServerLoginUrl", "https://auth.ala.org.au/cas/login");
+                    boolean forceLogin = BooleanUtils.toBoolean(getSettingsSupplementary().getProperty("force_login_downloads", "false"));
+
+                    if(forceLogin && isLoggedIn) {
+
+                        // Added fast download option -
+                        // TODO refactor so this can be generated from same code that sets the downloadUrl (uri) in BiocacheQuery.java
+                        String fastDownloadUrl = newUri.replaceFirst("/occurrences/download", "/occurrences/index/download");
+
+                        StringBuilder sbContent = new StringBuilder();
+                        sbContent.append("<p id='termsOfUseDownload' style='padding:10px; margin-bottom: 0;'>");
+                        sbContent.append("By downloading this content you are agreeing to use it in accordance ");
+                        sbContent.append("with the ");
+                        sbContent.append(orgName);
+                        sbContent.append("<a href='" + termsOfUse + "'>Terms of Use</a>");
+                        sbContent.append(" and any Data Provider Terms associated with the data download. ");
+                        sbContent.append("<br/><br/>");
+                        sbContent.append("Please provide the following details before downloading (* required)");
+                        sbContent.append("</p>");
+                        sbContent.append("    <form id='downloadForm' onSubmit='downloadSubmitButtonClick(); return false;' style='padding:10px;'>");
+                        sbContent.append("        <input type='hidden' name='url' id='downloadUrl' value='").append(uri).append("'/>");
+                        sbContent.append("        <input type='hidden' name='url' id='fastDownloadUrl' value='").append(fastDownloadUrl).append("'/>");
+                        sbContent.append("        <fieldset>");
+                        sbContent.append("            <p><label for='email'>Email</label>");
+                        sbContent.append("                <input type='text' name='email' id='email' value='" + Util.getUserEmail() + "' size='100'  readonly='true' />");
+                        sbContent.append("            </p>");
+                        sbContent.append("            <p><label for='filename'>File Name</label>");
+                        sbContent.append("                <input type='text' name='filename' id='filename' value='data' size='30'  />");
+                        sbContent.append("            </p>");
+
+                        sbContent.append("            <p><label for='reasonTypeId' style='vertical-align: top'>Download Reason *</label>");
+                        sbContent.append("            <select name='reasonTypeId' id='reasonTypeId'>");
+                        sbContent.append("            <option value=''>-- select a reason --</option>");
+                        JSONArray dlreasons = CommonData.getDownloadReasons();
+                        for (int i = 0; i < dlreasons.size(); i++) {
+                            JSONObject dlr = (JSONObject) dlreasons.get(i);
+                            sbContent.append("            <option value='").append((Long) dlr.get(StringConstants.ID)).append("'>").append(dlr.get(StringConstants.NAME)).append("</option>");
+                        }
+                        sbContent.append("            <select></p>");
+                        sbContent.append("                    <input style='display:none' type='radio' name='downloadType' value='fast' class='tooltip' checked='checked' title='Faster download but fewer fields are included'>");
+
+                        sbContent.append("            <p style='clear:both;'>&nbsp;</p>");
+                        sbContent.append("            <p style='text-align:center;'><input class='btn' type='submit' value='Download All Records' id='downloadSubmitButton'/></p>");
+
+                        sbContent.append("        </fieldset>");
+                        sbContent.append("    </form>");
+
+                        content = sbContent.toString();
+                    } else {
+                        content = "<p><h3>Please register or login to download data from " + orgName + ". </h3>" +
+                                "The link below will open a new window to login or register. Please keep this window " +
+                                "open  and redo the steps to export a point sample." +
+                                "</p>" +
+                                "<br/>" +
+                                "<p><a target='_blank' class='btn' href='" + loginUrl + "'>Login</a></p>";
                     }
-                    sbContent.append("            <select></p>");
-                    sbContent.append("                    <input style='display:none' type='radio' name='downloadType' value='fast' class='tooltip' checked='checked' title='Faster download but fewer fields are included'>");
-
-                    sbContent.append("            <p style='clear:both;'>&nbsp;</p>");
-                    sbContent.append("            <p style='text-align:center;'><input type='submit' value='Download All Records' id='downloadSubmitButton'/></p>");
-
-                    sbContent.append("        </fieldset>");
-                    sbContent.append("    </form>");
-
-                    content = sbContent.toString();
                 } else {
                     content = newUri;
                 }

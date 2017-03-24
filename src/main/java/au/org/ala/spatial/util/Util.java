@@ -31,8 +31,13 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
+import org.zkoss.zk.ui.Execution;
 import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.Sessions;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.StringReader;
@@ -528,7 +533,17 @@ public final class Util {
         }
 
         if (useremail == null) {
-            return "guest@ala.org.au";
+            Execution execution = Executions.getCurrent();
+            HttpServletRequest request = (HttpServletRequest) execution.getNativeRequest();
+            Cookie[] cookies = request.getCookies();
+            String userEmail = "guest@ala.org.au";
+            for(Cookie cookie: cookies){
+                if(cookie.getName().equals("ALA-Auth")){
+                    userEmail = cookie.getValue();
+                }
+            }
+
+            return userEmail;
         }
 
         return useremail;

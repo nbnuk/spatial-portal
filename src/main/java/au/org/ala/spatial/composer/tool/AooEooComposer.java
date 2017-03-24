@@ -15,6 +15,7 @@ import au.org.emii.portal.composer.MapComposer;
 import au.org.emii.portal.menu.MapLayer;
 import au.org.emii.portal.menu.SelectedArea;
 import au.org.emii.portal.util.LayerUtilitiesImpl;
+import com.sun.javafx.binding.StringConstant;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.io.WKTReader;
 import org.apache.log4j.Logger;
@@ -43,8 +44,8 @@ public class AooEooComposer extends ToolComposer {
     public boolean onFinish() {
         SelectedArea sa = getSelectedArea();
         Query q = getSelectedSpecies();
-        q = q.newFacet(new Facet("occurrence_status_s", "absent", false), false);
-        Facet f = new Facet("occurrence_status_s", "absent", false);
+        q = q.newFacet(new Facet(StringConstants.OCCURRENCE_STATUS, "absent", false), false);
+        Facet f = new Facet(StringConstants.OCCURRENCE_STATUS, "absent", false);
         q = q.newFacet(f, false);
         Query newQ = QueryUtil.queryFromSelectedArea(q, sa, false, null);
         

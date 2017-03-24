@@ -71,7 +71,6 @@ public final class CommonData {
     private static final String IGNORED_FACETS = "default_facets_ignored";
     private static final String I18N_URL = "i18nURL";
     private static final String I18N_IGNORE_THESE_PREFIXES = "i18nIgnoreThesePrefixes";
-//    private static final String BIOCACHE_QUERY_CONTEXT = "biocache_query_context";
     private static final Logger LOGGER = Logger.getLogger(CommonData.class);
     protected static String collectoryServer;
     protected static String[] customFacets;
@@ -98,7 +97,6 @@ public final class CommonData {
     private static int maxEndemicArea;
     private static String extraDownloadFields = "coordinateUncertaintyInMeters";
     private static boolean displayPointsOfInterest;
-    private static boolean autoCompleteCountsEnabled;
     private static String[] areaReportFacets;
     private static String i18nURL;
     private static List<String> i18nIgnoredPrefixes;
@@ -111,7 +109,6 @@ public final class CommonData {
     private static JSONArray layerlistJSON = null;
     private static JSONArray copyLayerlistJSON = null;
     private static String defaultFieldString = null;
-    private static String biocacheQueryContext = null;
     /**
      * key = LSID value = list of WMS names
      */

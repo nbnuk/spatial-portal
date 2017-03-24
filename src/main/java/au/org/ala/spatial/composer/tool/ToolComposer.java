@@ -1220,7 +1220,7 @@ public class ToolComposer extends UtilityComposer {
                 if (nextDiv != null && rgSpecies != null && (includeAnalysisLayersForUploadQuery || includeAnalysisLayersForAnyQuery)) {
                     Query q = getSelectedSpecies();
                     if (q != null) {
-                        q = q.newFacet(new Facet("occurrence_status_s", "absent", false), false);
+                        q = q.newFacet(new Facet(StringConstants.OCCURRENCE_STATUS, "absent", false), false);
                         boolean test = includeAnalysisLayersForAnyQuery || (q instanceof UserDataQuery);
 
                         if (selectedLayersCombobox != null
