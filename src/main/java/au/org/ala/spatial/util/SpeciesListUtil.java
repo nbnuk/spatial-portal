@@ -50,7 +50,7 @@ public class SpeciesListUtil {
      */
     public static Map<String, String> getIndexedLists() {
 
-        String url = CommonData.getBiocacheServer() + "/occurrences/search?q=*:*&facets=species_list_uid&pageSize=0";
+        String url = CommonData.getBiocacheServer() + "/occurrences/search?q=*:*&facets=species_list_uid&pageSize=0&flimit=-1";
         HttpClient client = new HttpClient();
         GetMethod get = new GetMethod(url);
         try {
@@ -285,7 +285,7 @@ public class SpeciesListUtil {
         //get the number of lists
         int num = getNumberOfPublicSpeciesLists(null);
         int total = 0;
-        int max = 50;
+        int max = 1000;
         Map<String, String> tmpMap = new java.util.HashMap<String, String>();
         while (total < num) {
             Collection<SpeciesListDTO> batch = getPublicSpeciesLists(null, total, max, null, null, null, null);

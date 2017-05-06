@@ -178,7 +178,7 @@ public class SpeciesListListbox extends Listbox {
         String lsids = sb.length() > 0 ? sb.toString() : null;
 
         //ignore unmatchedNames
-        return new BiocacheQuery(lsids, null, null, null, null, false, geospatialKosher);
+        return new BiocacheQuery(lsids, null, null, null, facets, false, geospatialKosher);
     }
 
     public String getSelectedNames() {
