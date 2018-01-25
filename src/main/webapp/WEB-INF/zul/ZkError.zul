@@ -17,7 +17,7 @@
     <caption image="/img/error.png"/>
     <vbox >
    
-		The ALA Spatial Portal encountered a serious error.  It is recommended
+		The NBN Atlas Spatial Portal encountered a serious error.  It is recommended
 		to reload the portal but it may be possible to continue.  We have recorded
 		the error and will investigate a fix.
         <div class="btn-group">
