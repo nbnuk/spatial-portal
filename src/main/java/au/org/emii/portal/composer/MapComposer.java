@@ -415,7 +415,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
                     String loginUrl = getSettingsSupplementary().getProperty("casServerLoginUrl", "https://auth.ala.org.au/cas/login");
                     boolean forceLogin = BooleanUtils.toBoolean(getSettingsSupplementary().getProperty("force_login_downloads", "false"));
 
-                    if(forceLogin && isLoggedIn) {
+                    if((forceLogin && isLoggedIn) || (!forceLogin)) {
 
                         // Added fast download option -
                         // TODO refactor so this can be generated from same code that sets the downloadUrl (uri) in BiocacheQuery.java
@@ -426,7 +426,7 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
                         sbContent.append("By downloading this content you are agreeing to use it in accordance ");
                         sbContent.append("with the ");
                         sbContent.append(orgName);
-                        sbContent.append("<a href='" + termsOfUse + "'>Terms of Use</a>");
+                        sbContent.append(" <a href='" + termsOfUse + "'>Terms of Use</a>");
                         sbContent.append(" and any Data Provider Terms associated with the data download. ");
                         sbContent.append("<br/><br/>");
                         sbContent.append("Please provide the following details before downloading (* required)");
@@ -451,8 +451,10 @@ public class MapComposer extends GenericAutowireAutoforwardComposer {
                             sbContent.append("            <option value='").append((Long) dlr.get(StringConstants.ID)).append("'>").append(dlr.get(StringConstants.NAME)).append("</option>");
                         }
                         sbContent.append("            <select></p>");
-                        sbContent.append("                    <input style='display:none' type='radio' name='downloadType' value='fast' class='tooltip' checked='checked' title='Faster download but fewer fields are included'>");
-
+                        sbContent.append("            <input style='display:none' type='radio' name='downloadType' value='fast' class='tooltip' checked='checked' title='Faster download but fewer fields are included'>");
+                        sbContent.append("            <p><label for='acceptLicense'>Accept licencing *</label>");
+                        sbContent.append("               <input type='checkbox' id='downloadConfirmLicense' name='downloadConfirmLicense'/> I understand and accept that any <a href='https://docs.nbnatlas.org/data-licenses/'>CC-BY-NC</a> licenced records included in the download must not be used for commercial purposes without the permission of the data provider and all data providers will be acknowledged as required. Breach of the licence conditions may result in you being issued with a <a href='https://docs.nbnatlas.org/data-licenses/breach-licence-conditions/'>fixed charge notice</a>.");
+                        sbContent.append("            </p>");
                         sbContent.append("            <p style='clear:both;'>&nbsp;</p>");
                         sbContent.append("            <p style='text-align:center;'><input class='btn' type='submit' value='Download All Records' id='downloadSubmitButton'/></p>");
 

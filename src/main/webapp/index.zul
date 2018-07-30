@@ -501,15 +501,23 @@
     function validateForm() {
             var isValid = false;
             var reasonId = $("#reasonTypeId option:selected").val();
-
-            if (reasonId) {
+            var licenseConfirm =  $("#downloadConfirmLicense").is(':checked');
+            if (reasonId && licenseConfirm) {
                 isValid = true;
             } else {
-                $("#reasonTypeId").focus();
-                $("label[for='reasonTypeId']").css("color","red");
-                alert("Please select a \"download reason\" from the drop-down list");
+                var msg = "";
+                if (!reasonId) {
+                    msg = msg + (msg>""? "<br/>" : "") + "Please select a \"download reason\" from the drop-down list.";
+                    $("#reasonTypeId").focus();
+                    $("label[for='reasonTypeId']").css("color","red");
+                }
+                if (!licenseConfirm) {
+                    msg = msg + (msg>""? "\n" : "") + "Please accept the licencing terms.";
+                    if (reasonId) $('#downloadConfirmLicense').focus();
+                    $("label[for='acceptLicense']").css("color","red");
+                }
+                alert(msg);
             }
-
             return isValid;
         }
 
