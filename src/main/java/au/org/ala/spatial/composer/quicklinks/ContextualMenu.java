@@ -148,10 +148,10 @@ public class ContextualMenu extends UtilityComposer {
                     new GDMEvent(speciesLayer.getName(),
                             (polygonLayer != null) ? polygonLayer.getName() : null, null)));
         }
-        if (polygonLayer != null) {
+        /* if (polygonLayer != null) {
             actions.add(new Action("Export area \"" + polygonLayer.getDisplayName() + "\"",
                     new ExportAreaEvent(polygonLayer.getName())));
-        }
+        } */
         if (speciesLayer != null && speciesLayer == layers.get(0)) {
             actions.add(new Action("Display facet of \"" + speciesLayer.getDisplayName() + "\"",
                     new OpenFacetsEvent(speciesLayer.getName())));
